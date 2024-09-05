@@ -52,20 +52,12 @@ int main(int argc, char *argv[])
     vec2 *playerVerts = malloc(sizeof(vec2) * 4);
     memcpy(playerVerts,squareEntityCords,8 * sizeof(float));
     player = ENTITY_create(PLAYER, playerVerts, 4, 30,0,0, 0);
-
+    player->hp = 100;
 
     vec2 *otherVerts = malloc(sizeof(vec2) * 4);
     memcpy(otherVerts,squareEntityCords,8 * sizeof(float));
     ENTITY *other = ENTITY_create(ENEMY, otherVerts, 4, 50, 0,150, 0);
-
-    
-    // printf("Player Verts\n");
-    // ENTITY_printLoc(player);
-
-    // printf("Other Verts\n");
-    // ENTITY_printLoc(other);
-
-    ENTITY_collide(player,other);
+    other->hp = 100;
 
     unsigned int sqrEntityVAO, sqrEntityVBO,sqrEntityEBO;
     glGenVertexArrays(1,&sqrEntityVAO);
@@ -180,6 +172,7 @@ int main(int argc, char *argv[])
         // printf("%lf\n", player->degree);
         glfwPollEvents();
         glfwSwapBuffers(window);
+        printf("%f\n", deltaTime);
     }
     return 0;
 }
@@ -224,7 +217,7 @@ void userInput(GLFWwindow *window , ENTITY *player)
 
     if(glfwGetKey(window, GLFW_KEY_SPACE))
     {
-        if(lastTime - LAST_SPACE >= KEY_LOCK_OUT*deltaTime)
+        if(lastTime - LAST_SPACE >= 0*deltaTime)
         {
             LAST_SPACE = lastTime;
             vec2 *verts = malloc(sizeof(vec2) * 4);
@@ -234,13 +227,18 @@ void userInput(GLFWwindow *window , ENTITY *player)
             
             ENTITY *proj = ENTITY_create(PLAYER,verts, 4, 20,
                 res[0],res[1],player->degree);
-            proj->velocity = 200;
+               proj->velocity = 200;
             proj->xPos = proj->xPos + proj->direction[0] *proj->scale/2;
             proj->yPos = proj->yPos + proj->direction[1] *proj->scale/2;
 
             ENTITY_eListAdd(proj);
         }
     }
+}
+
+void gameTick()
+{
+    
 }
 
 void updateProj()

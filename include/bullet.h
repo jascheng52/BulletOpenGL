@@ -25,6 +25,22 @@ const int squareEntityOrder[] =
     3 , 1, 2 
 };
 
+const float arrowEntityCords[] = 
+{
+    //Four corners of square clockwise
+    //Starting from bottom left
+    -1,  -2,
+     0,   0.5, 
+     1,  -2, 
+     0,  -0.5
+};
+
+const int arrowEntityOrder[] =
+{
+    0 , 1, 3, 
+    3 , 1, 2 
+};
+
 const float lineBuffer[] =
 {
     0,0,

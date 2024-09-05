@@ -45,26 +45,21 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     entity->degree = deg;
     entity->xPos = x;
     entity->yPos = y;
-    entity->velocity = 0;
     entity->scale = scale;
     gen_rot_mat_up(deg, entity->rotMat);
     glmc_mat2_mulv(entity->rotMat,DEF_UP_DIR,entity->direction);
 
-    // printf("%lld\n", lenVert);
-
     for(size_t i = 0; i < lenVert; i++)
     {
         glmc_vec2_scale(entity->vertices[i],scale,entity->vertices[i]);
-        glmc_mat2_mulv(entity->rotMat,entity->vertices[i],entity->vertices[i]);
-        // printf("SCALED\n");
-        // glm_vec2_print(entity->vertices[i],stdout);
+        glmc_mat2_mulv(entity->rotMat,entity->vertices[i],entity->vertices[i]);    
     }
-    // if(type == ENEMY)
-    //     exit(EXIT_FAILURE);
-    // printf("Calculated Vertices\n%f\n%f\n%f\n%f\n", *entity->vertices[0],*entity->vertices[1],*entity->vertices[2],*entity->vertices[3]);
-    // exit(EXIT_FAILURE);
-    
 
+    entity->velocity = 0;
+    entity->hp = 0;
+    entity->timeAlive = 0;
+    entity->timeLeft = 0;
+    
     return entity;
 }
 
@@ -87,42 +82,22 @@ int ENTITY_collide(ENTITY *e1, ENTITY *e2)
     for(size_t i = 0; i < e1->sizeVertices; i++)
     {
         vec2 outerV1, outerV2;
-        glm_vec2_copy(e1->vertices[i], outerV1);
+        ENTITY_worldCords(e1,e1->vertices[i],outerV1);
         if(i == e1->sizeVertices - 1)
-            glm_vec2_copy(e1->vertices[0], outerV2);
+            ENTITY_worldCords(e1,e1->vertices[0],outerV2);
         else
-            glm_vec2_copy(e1->vertices[i + 1], outerV2);
-        // printf("PreCopy\n");
-        // glm_vec2_print(outerV1, stdout);
-        // glm_vec2_print(outerV2, stdout); 
-        glmc_mat2_mulv(e1->rotMat,outerV1,outerV1);
-        glmc_mat2_mulv(e1->rotMat,outerV2,outerV2);
+            ENTITY_worldCords(e1,e1->vertices[i + 1],outerV2);
+        
 
-        glm_vec2_add(outerV1,(vec2){e1->xPos,e1->yPos}, outerV1);
-        glm_vec2_add(outerV2,(vec2){e1->xPos,e1->yPos}, outerV2);
-          
-        // printf("OUTER\n");
-        // ENTITY_printLoc(e1);
         for(size_t j = 0; j < e2->sizeVertices; j++)
         {
             vec2 innerV1, innerV2;
-            glm_vec2_copy(e2->vertices[j], innerV1);
+            ENTITY_worldCords(e2,e2->vertices[i],innerV1);
             if(j == e2->sizeVertices - 1)
-                glm_vec2_copy(e2->vertices[0], innerV2);
+                ENTITY_worldCords(e2,e2->vertices[0],innerV2);
             else
-                glm_vec2_copy(e2->vertices[j + 1], innerV2);
-            glmc_mat2_mulv(e2->rotMat,innerV1,innerV1);
-            glmc_mat2_mulv(e2->rotMat,innerV2,innerV2);
-            // printf("X:%f    Y:%f\n",e1->xPos, e1->yPos);
-            // printf("SUMCHECK1\n");
-            // glm_vec2_print(outerV1, stdout);
-            // glm_vec2_print(outerV2, stdout);
-
-            // printf("VERTCHECK2\n");
-            // glm_vec2_print(innerV1, stdout);
-            // glm_vec2_print(innerV2, stdout);
-            glm_vec2_add(innerV1,(vec2){e2->xPos,e2->yPos}, innerV1);
-            glm_vec2_add(innerV2,(vec2){e2->xPos,e2->yPos}, innerV2);
+                ENTITY_worldCords(e2,e2->vertices[j + 1],innerV2);
+                // glm_vec2_copy(e2->vertices[j + 1], innerV2);
             // printf("X:%f    Y:%f\n",e2->xPos, e2->yPos);
             // printf("SUMCHECK2\n");
             // glm_vec2_print(innerV1, stdout);
@@ -159,22 +134,19 @@ int ENTITY_vertexDirection(ENTITY *e, vec2 res, float windHeight, float windWidt
 
     // printf("RAY END\n");
     // glm_vec2_print(castRayEnd,stdout);
-    ENTITY_printLoc(e);
+    // ENTITY_printLoc(e);
     for(size_t i = 0; i < e->sizeVertices; i++)
     {
         vec2 eV1, eV2;
-        glm_mat2_mulv(e->rotMat,e->vertices[i],eV1);
-        glm_vec2_add(eV1,(vec2){e->xPos, e->yPos}, eV1);
-
+        ENTITY_worldCords(e,e->vertices[i],eV1);
         if(i == (e->sizeVertices - 1) )
         {
-            glm_mat2_mulv(e->rotMat,e->vertices[0],eV2);
-            glm_vec2_add(eV2,(vec2){e->xPos, e->yPos}, eV2);
+            ENTITY_worldCords(e,e->vertices[0],eV2);
         }
         else
         {
-            glm_mat2_mulv(e->rotMat,e->vertices[i+1],eV2);
-            glm_vec2_add(eV2,(vec2){e->xPos, e->yPos}, eV2);
+            ENTITY_worldCords(e,e->vertices[i+1],eV2);
+
         }
 
         if(intersect_2d(castRayOrigin,castRayEnd,eV1,eV2))
@@ -202,12 +174,12 @@ int ENTITY_vertexDirection(ENTITY *e, vec2 res, float windHeight, float windWidt
     if(!e1Detected)
         return 0;
 
-    ENTITY_printLoc(e);
+    // ENTITY_printLoc(e);
     res[0] = (v1[0] + v2[0]) / 2;
     res[1] = (v1[1] + v2[1]) / 2;
     // glmc_mat2_mulv(e->rotMat,res,res);
-    printf("Edge detected");
-    glm_vec2_print(res,stdout);
+    // printf("Edge detected");
+    // glm_vec2_print(res,stdout);
     return 1;
 }
 
@@ -220,6 +192,7 @@ void ENTITY_eListInit(size_t max_size)
         fprintf(stderr, "Tried to initialize enity list when already initialized\n");
         exit(EXIT_FAILURE);
     }
+    
     eList = calloc(max_size, sizeof(ENTITY *));
     if(eList == NULL)
     {
@@ -231,6 +204,7 @@ void ENTITY_eListInit(size_t max_size)
 }
 void ENTITY_eListAdd(ENTITY *e)
 {
+    // printf("List Size%lld\n",eListSize);
     if(e == NULL)
     {
         fprintf(stderr, "Attempted to add Null Entity\n");
@@ -244,7 +218,7 @@ void ENTITY_eListAdd(ENTITY *e)
 
     if(eListSize == ENTITY_maxSize)
     {
-        eList = realloc(eList,ENTITY_maxSize + DEF_MAX_ENTITY);
+        eList = realloc(eList,(ENTITY_maxSize + DEF_MAX_ENTITY) * sizeof(ENTITY *));
         if(eList == NULL)
         {
             fprintf(stderr, "Failed to resize enity list\n");
@@ -290,7 +264,7 @@ void ENTITY_updateDeg(ENTITY *e, float deg)
 {
     if(e == NULL)
     {
-        fprintf(stderr, "Attempted to update null entry deg\n");
+        fprintf(stderr, "Attempted to update deg null entry deg\n");
         exit(EXIT_FAILURE);
     }
     e->degree =deg;
@@ -303,6 +277,11 @@ void ENTITY_updateDeg(ENTITY *e, float deg)
 
 void ENTITY_printLoc(ENTITY * e)
 {
+    if(e == NULL)
+    {
+        fprintf(stderr,"Attempted to print null Entity\n");
+        exit(EXIT_FAILURE);
+    }
     for(size_t i = 0; i < e->sizeVertices; i++)
     {
         vec2 location;
@@ -312,9 +291,32 @@ void ENTITY_printLoc(ENTITY * e)
     }
 }
 
+int ENTITY_tickUpdate(ENTITY *e, size_t index)
+{
+    if(e == NULL)
+    {
+        fprintf(stderr,"Attempted to update tick null Entity\n");
+        exit(EXIT_FAILURE);
+    }
+    e->timeAlive++;
+    if(e->timeAlive > e->timeLeft)
+    {
+        ENTITY_eListDelete(index);
+        return 1;
+    }
+    return 0;
+}
 
-
-
+void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des)
+{
+    if(e == NULL)
+    {
+        fprintf(stderr, "Attempted to calculate world cords on null entity\n");
+    }
+    
+    glmc_mat2_mulv(e->rotMat,v,des);
+    glm_vec2_add(des,(vec2){e->xPos,e->yPos}, des);
+}
 
 
 int intersect_2d(vec2 line1_0, vec2 line1_1, vec2 line2_0, vec2 line2_1)

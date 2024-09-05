@@ -24,6 +24,9 @@ typedef struct entity
     float yPos;
     float velocity;
     float scale;
+    int hp;
+    size_t timeAlive; 
+    size_t timeLeft;
 }ENTITY;
 
 #define DEF_MAX_ENTITY 1000
@@ -67,7 +70,17 @@ void ENTITY_eListDelete(size_t index);
 //Frees the elist, frees all elist entries
 void ENTITY_eListFree();
 
+//Updates the degrees,direction vector, and rotational matrix
 void ENTITY_updateDeg(ENTITY *e, float deg);
+
+//Handles actions to be done at every game tick
+//including timeAlive, Should be done via update loop
+//Returns true if entity is deleted
+int ENTITY_tickUpdate(ENTITY *e, size_t index);
+
+//Calculate window cords of v based on e and store in des
+void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des);
+
 
 void ENTITY_printLoc(ENTITY * e);
 
