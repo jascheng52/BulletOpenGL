@@ -22,20 +22,26 @@ ENTITY = $(addprefix $(ENTITY_FOLDER), $(ENTITY_FILE))
 ENTITY_OBJ = $(ENTITY:.c=.o)
 ENTITY_TEST_OBJ = $(ENTITY_OBJ) $(addprefix $(ENTITY_FOLDER), $(ENTITY_TEST_FILE))
 
+ATTACKS_FILE = attacks.c
+ATTACKS_TEST_FILE = 
+ATTACKS_FOLDER = $(SRC_FOLDER)attacks/
+ATTACKS = $(addprefix $(ATTACKS_FOLDER), $(ATTACKS_FILE))
+ATTACKS_OBJ = $(ATTACKS:.c=.o)
+ATTACKS_TEST= $(ATTACKS_OBJ) $(addprefix $(ATTACKS_FOLDER), $(ATTACKS_FILE))
+
 SHADER_FILE = shader.c
 SHADER_FOLDER = ./mod/
 SHADER = $(addprefix $(SHADER_FOLDER), $(SHADER_FILE)) 
 SHADER_OBJ = $(SHADER:.c=.o)
 
 
-OBJECTS = $(GLAD_OBJ) $(SRC_OBJ) $(SHADER_OBJ) $(ENTITY_OBJ) 
+OBJECTS = $(GLAD_OBJ) $(SRC_OBJ) $(SHADER_OBJ) $(ENTITY_OBJ) $(ATTACKS_OBJ)
 $(info   OBJECTS is $(OBJECTS))
 
 .PHONY: all clean entity
 
 
 all: $(TARGET)
-
 
 $(TARGET) : $(OBJECTS)
 	$(CC) $^ -o $@ $(LFLAGS)
@@ -47,12 +53,18 @@ $(TARGET) : $(OBJECTS)
 clean:
 	rm -f bullet.exe 
 	rm -f test_entity.exe 
-	rm -f $(SRC_FOLDER)/*.o 
-	rm -f $(SHADER_FOLDER)/*.o 
-	rm -f $(ENTITY_FOLDER)/*.o
+	rm -f $(SRC_FOLDER)*.o 
+	rm -f $(SHADER_FOLDER)*.o 
+	rm -f $(ENTITY_FOLDER)*.o
 
 
 entity: $(TEST_ENTITY)
 
-$(TEST_ENTITY) : $(ENTITY_TEST_OBJ)
-	$(CC) -I$(INCLUDE) $^ -o $@ $(LFLAGS) -g
+	$(TEST_ENTITY) : $(ENTITY_TEST_OBJ)
+		$(CC) -I$(INCLUDE) $^ -o $@ $(LFLAGS) -g
+
+
+attacks: $(ATTACKS_TEST)
+	$(ATTACKS_TEST) : $(ATTACKS_TEST)
+		$(CC) -I$(INCLUDE) $^ -o $@ $(LFLAGS) -g
+

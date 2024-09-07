@@ -18,10 +18,26 @@ ENTITY **eList = NULL;
 ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert, 
     float scale, float x,float y,float deg)
 {
+    ENTITY *entity = malloc(sizeof(*entity));
+    if(entity == NULL)
+    {
+        fprintf(stderr, "Out of memory creating entity\n");
+        return NULL;
+    }
+
     switch(type)
     {
-        case PLAYER:
-        case ENEMY:
+        case TYPE_PLAY_MAIN:
+            entity->group = ALLY;
+            break;
+        case TYPE_ENEMY:
+            entity->group = OPPONENT;
+            break;
+        case TYPE_PLAY_PROJ:
+            entity->group = ALLY;
+            break;  
+        case TYPE_ENEMY_PROJ:
+            entity->group = OPPONENT;
             break;
         default:
             fprintf(stderr, "Invalid Entity Type\n");
@@ -32,13 +48,6 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
         fprintf(stderr, "Missing vertices arguments\n");
         return NULL;
     }
-
-    ENTITY *entity = malloc(sizeof(*entity) );
-    if(entity == NULL)
-    {
-        fprintf(stderr, "Out of memory creating entity\n");
-        return NULL;
-    }
     entity->type = type;
     entity->sizeVertices = lenVert;
     entity->vertices = vertices;
@@ -46,13 +55,23 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     entity->xPos = x;
     entity->yPos = y;
     entity->scale = scale;
+        
+    glmc_mat2_identity(entity->rotMat);
     gen_rot_mat_up(deg, entity->rotMat);
+
+    glmc_vec2_zero(entity->direction);
     glmc_mat2_mulv(entity->rotMat,DEF_UP_DIR,entity->direction);
 
     for(size_t i = 0; i < lenVert; i++)
     {
+        glmc_vec2_zero(entity->vertices[i]);
         glmc_vec2_scale(entity->vertices[i],scale,entity->vertices[i]);
-        glmc_mat2_mulv(entity->rotMat,entity->vertices[i],entity->vertices[i]);    
+        glmc_mat2_mulv(entity->rotMat,entity->vertices[i],entity->vertices[i]); 
+        if(entity->vertices[i][0] > 10000)
+        {
+            printf("Overflow Here \n");  
+            exit(EXIT_FAILURE);
+        }
     }
 
     entity->velocity = 0;
@@ -78,6 +97,11 @@ void ENTITY_delete(ENTITY *entity)
 
 int ENTITY_collide(ENTITY *e1, ENTITY *e2)
 {
+    if(e1 == NULL || e2 == NULL)
+    {
+        fprintf(stderr, "Attempted to collide check null(s) entites at %p and %p\n",e1,e2);
+        exit(EXIT_FAILURE);
+    }
 
     for(size_t i = 0; i < e1->sizeVertices; i++)
     {

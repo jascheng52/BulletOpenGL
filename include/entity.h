@@ -6,15 +6,23 @@
 
 typedef enum en_type
 {
-    PLAYER,
-    ENEMY
+    TYPE_PLAY_MAIN,
+    TYPE_PLAY_PROJ,
+    TYPE_ENEMY,
+    TYPE_ENEMY_PROJ
 }EN_TYPE;
 
+typedef enum en_group
+{
+    ALLY,
+    OPPONENT
+}EN_GROUP;
 
 //deg should be updated via update deg
 typedef struct entity
 {
     EN_TYPE type;
+    EN_GROUP group;
     size_t sizeVertices;
     vec2 *vertices;
     vec2 direction;

@@ -6,59 +6,35 @@
 
 #define WINDOWHEIGHT 900
 #define WINDOWWIDTH 600
+extern int windWidth;
+extern int windHeight;
+
 
 //Shader vertices
+extern float squareEntityCords[8];
 
-const float squareEntityCords[] = 
-{
-    //Four corners of square clockwise
-    //Starting from bottom left
-    -1,  -1,
-    -1,   1, 
-     1,   1, 
-     1,  -1
-};
+extern int squareEntityOrder[6];
 
-const int squareEntityOrder[] =
-{
-    0 , 1, 3, 
-    3 , 1, 2 
-};
+extern float arrowEntityCords[8];
 
-const float arrowEntityCords[] = 
-{
-    //Four corners of square clockwise
-    //Starting from bottom left
-    -1,  -2,
-     0,   0.5, 
-     1,  -2, 
-     0,  -0.5
-};
+extern int arrowEntityOrder[6];
 
-const int arrowEntityOrder[] =
-{
-    0 , 1, 3, 
-    3 , 1, 2 
-};
+extern float lineBuffer[4];
 
-const float lineBuffer[] =
-{
-    0,0,
-    0, 1
-};
+
 
 
 //Input handeling
-
 #define KEY_LOCK_OUT 10
-double LAST_W = 0;
-double LAST_A = 0;
-double LAST_S = 0;
-double LAST_D = 0;
-double LAST_SPACE = 0;
+extern double LAST_W;
+extern double LAST_A;
+extern double LAST_S;
+extern double LAST_D;
+extern double LAST_SPACE;
 
 
 void userInput(GLFWwindow *window , ENTITY *player);
+
 void updateProj();
 
 
