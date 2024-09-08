@@ -62,10 +62,10 @@ double LAST_A = 0;
 double LAST_S = 0;
 double LAST_D = 0;
 double LAST_SPACE = 0;
+vec2 prevPost = {0,0};
 
 double lastTime = 0;
-double prevTime = 0;
-double deltaTime = 0;
+size_t GLOB_GAME_TICK = 0;
 ENTITY *player;
 
 int main(int argc, char *argv[])
@@ -97,14 +97,14 @@ int main(int argc, char *argv[])
     player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,0, 0);
     player->hp = 100;
     
-    // vec2 *otherVerts = malloc(sizeof(vec2) * 4);
-    // memcpy(otherVerts,squareEntityCords,8 * sizeof(float));
-    // ENTITY *other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 0);
-    // other->hp = 1000;
+    vec2 *otherVerts = malloc(sizeof(vec2) * 4);
+    memcpy(otherVerts,squareEntityCords,8 * sizeof(float));
+    ENTITY *other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 0);
+    other->hp = 1000;
 
     ENTITY_eListInit(DEF_MAX_ENTITY);
     ENTITY_eListAdd(player);
-    // ENTITY_eListAdd(other);
+    ENTITY_eListAdd(other);
 
     unsigned int sqrEntityVAO, sqrEntityVBO,sqrEntityEBO;
     glGenVertexArrays(1,&sqrEntityVAO);
@@ -139,48 +139,33 @@ int main(int argc, char *argv[])
     if(lineShader == NULL)
         exit(EXIT_FAILURE);
 
+    const float MAX_FPS = DEF_TICK_RATE;
+    const float SKIP_TICK = 1000/MAX_FPS/1000;
+    double nextTick = glfwGetTime();
     while(!glfwWindowShouldClose(window))
     {
-        double temp = lastTime;
         lastTime = glfwGetTime();
-        deltaTime = lastTime - prevTime;
-        prevTime = temp;
-            
+
         glClearColor(1,1,1,1.0);
         glClear(GL_COLOR_BUFFER_BIT);
 
-
-
-        userInput(window,player);
-        // glBindVertexArray(sqrEntityVAO);
-        // SHADER_use(squareEntityShader);
-        // if(ENTITY_collide(player,other))
-        // {
-        //     SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){0,1,0});
-        // }
-        // else
-        // {
-        //     SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){1,0,0});
-        // }
-        // SHADER_setFloat(squareEntityShader,"windWidth",windWidth);
-        // SHADER_setFloat(squareEntityShader,"windHeight",windHeight);
+        int loop = 0;
+        // printf("Current tick %lf\n", lastTime);
+        while(lastTime > nextTick && loop < DEF_MAX_TICK_SKIP)
+        {
+            // printf("Polling user input");
+            userInput(window,player);
+            // ENTITY_updateDeg(player,player->pos.degree + 5);
+            updateProj();
+            nextTick = nextTick + SKIP_TICK;
+            // printf("Next tick at :%lf\n", nextTick);
+            GLOB_GAME_TICK++;
+            loop++;
+        }
         
-        // SHADER_setFloat(squareEntityShader,"xPos",player->xPos);
-        // SHADER_setFloat(squareEntityShader,"yPos",player->yPos);
-        // SHADER_setFloat(squareEntityShader, "scale", player->scale);
-        // SHADER_setMat2(squareEntityShader, "rotMat", player->rotMat);
-        // printf("Matrix\n");
-        // glm_mat2_print(player->rotMat,stdout);
-        // printf("degrees: %lf\n",player->degree);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
-        // SHADER_setFloat(squareEntityShader,"xPos",other->xPos);
-        // SHADER_setFloat(squareEntityShader,"yPos",other->yPos);
-        // SHADER_setFloat(squareEntityShader, "scale", other->scale);
-        // SHADER_setMat2(squareEntityShader, "rotMat", other->rotMat);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
-
-        updateProj();
-        // printf("%lld, %lf\n",eListSize, deltaTime);
+        float interpolation = (nextTick - lastTime) / SKIP_TICK;
+        // printf("Next Tick diff: %f\n", (nextTick - lastTime));
+        // printf("SKIP_TICK: %f\n", SKIP_TICK);
         glBindVertexArray(sqrEntityVAO);
         SHADER_use(squareEntityShader);
 
@@ -192,24 +177,8 @@ int main(int argc, char *argv[])
             switch (eList[i]->type)
             {
                 case TYPE_PLAY_MAIN:
-                    // if(ENTITY_collide(player,other))
-                    // {
-                    //     SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){0,1,0});
-                        
-                    // }
                     break;
                 case TYPE_PLAY_PROJ:
-                    // printf("Looping e with degree %f\n", eList[i]->degree);
-                    // printf("LOCATED");
-                    // ENTITY_printLoc(eList[i]);
-                    // if(ENTITY_collide(eList[i],other))
-                    // {
-                    //     other->hp = other->hp - 10;
-                    //     // printf("Other hit. New HP: %d\n", other->hp);
-                    //     ENTITY_eListDelete(i);
-                    //     i--;
-                    //     continue;
-                    // }
                     break;
                 case TYPE_ENEMY:
                     if(eList[i]->hp == 0)
@@ -223,31 +192,46 @@ int main(int argc, char *argv[])
                 default:
                     break;
             }
-            SHADER_setFloat(squareEntityShader,"xPos",eList[i]->xPos);
-            SHADER_setFloat(squareEntityShader,"yPos",eList[i]->yPos);
-            SHADER_setFloat(squareEntityShader, "scale", eList[i]->scale);
-            SHADER_setMat2(squareEntityShader, "rotMat", eList[i]->rotMat);
+            
+            SHADER_setFloat(squareEntityShader,"xPos",eList[i]->pos.prevXPos + interpolation * (eList[i]->pos.xPos - eList[i]->pos.prevXPos) );
+            SHADER_setFloat(squareEntityShader,"yPos",eList[i]->pos.prevYPos + interpolation * (eList[i]->pos.yPos - eList[i]->pos.prevYPos) );
+            // printf("INTER:%f\n", interpolation);
+            if(eList[i]->type == TYPE_PLAY_PROJ)
+            {
+                printf("INTER DEG: %f\n", eList[i]->pos.prevDeg);
+            }
+            float interDeg = eList[i]->pos.prevDeg + interpolation * (eList[i]->pos.degree - eList[i]->pos.prevDeg);
+            // if(i != 0 && i != 1)
+            // {
+            //     printf("prev: %f\n", eList[i]->pos.prevDeg);
+            //     printf("curr: %f\n", eList[i]->pos.degree );
+            //     printf("interpolation: %f\n", interpolation );
+            //     printf("interDeg: %f\n", interDeg);
+            // }
+            mat2 rotMat;
+            gen_rot_mat_up(interDeg,rotMat);
+            
+            SHADER_setFloat(squareEntityShader, "scale", eList[i]->pos.scale);
+            SHADER_setMat2(squareEntityShader, "rotMat",rotMat);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
         }
   
 
-        SHADER_use(lineShader);
-        glBindVertexArray(lineVAO);
-        SHADER_setFloat(lineShader,"windWidth",windWidth);
-        SHADER_setFloat(lineShader,"windHeight",windHeight);
-        SHADER_setFloat(lineShader,"xOffSet",player->xPos);
-        SHADER_setFloat(lineShader,"yOffSet",player->yPos );
+        // SHADER_use(lineShader);
+        // glBindVertexArray(lineVAO);
+        // SHADER_setFloat(lineShader,"windWidth",windWidth);
+        // SHADER_setFloat(lineShader,"windHeight",windHeight);
+        // SHADER_setFloat(lineShader,"xOffSet",player->pos.xPos);
+        // SHADER_setFloat(lineShader,"yOffSet",player->pos.yPos );
         
-        // glm_vec2_print(player->direction,stdout);
-        SHADER_setVec3(lineShader,"rgbColor",(vec3){0,0,1});
-        SHADER_setMat2(lineShader,"rotMatrix",player->rotMat);
-        glDrawArrays(GL_LINES, 0,2);
+        // // glm_vec2_print(player->direction,stdout);
+        // SHADER_setVec3(lineShader,"rgbColor",(vec3){0,0,1});
+        // SHADER_setMat2(lineShader,"rotMatrix",player->pos.rotMat);
+        // glDrawArrays(GL_LINES, 0,2);
 
-        // ENTITY_updateDeg(player,(player->degree)+5 *deltaTime);
         // printf("%lf\n", player->degree);
         glfwPollEvents();
         glfwSwapBuffers(window);
-        printf("%f\n", deltaTime);
     }
     return 0;
 }
@@ -255,59 +239,62 @@ int main(int argc, char *argv[])
 
 
 void userInput(GLFWwindow *window , ENTITY *player)
-{
-    float step = 200 * deltaTime;
-    // printf("%f\n", deltaTime);
+{   
+    // float step = 200 * deltaTime;
+    float step = 5; 
+    LAST_W = 0;
+    LAST_A = 0;
+    LAST_S = 0;
+    LAST_D = 0;
+
+    player->pos.prevYPos = player->pos.yPos;
+    player->pos.prevXPos = player->pos.xPos;
+
     if(glfwGetKey(window, GLFW_KEY_W))
     {
-        LAST_W = lastTime;
-        player->yPos = player->yPos + step;
-        if(player->yPos > (windHeight/2-30))
+        LAST_W = 1;
+        player->pos.yPos = player->pos.yPos + step;
+        if(player->pos.yPos > (windHeight/2-30))
         {
-            player->yPos = (windHeight/2-30);
+            player->pos.yPos = (windHeight/2-30);
         } 
     }
     if(glfwGetKey(window, GLFW_KEY_S))
     {
-        LAST_S = lastTime;
-        player->yPos = player->yPos - step;
-        if(player->yPos < -(windHeight/2-30))
-            player->yPos = -(windHeight/2-30);
+        LAST_S = -1;
+        player->pos.yPos = player->pos.yPos - step;
+        if(player->pos.yPos < -(windHeight/2-30))
+            player->pos.yPos = -(windHeight/2-30);
         
     }
     if(glfwGetKey(window, GLFW_KEY_A))
     {
-        LAST_A = lastTime;
-        player->xPos = player->xPos - step;
-        if(player->xPos < -(windWidth/2-30))
-            player->xPos = -(windWidth/2-30);
+        LAST_A = -1;
+        player->pos.xPos = player->pos.xPos - step;
+        if(player->pos.xPos < -(windWidth/2-30))
+            player->pos.xPos = -(windWidth/2-30);
     }
     if(glfwGetKey(window, GLFW_KEY_D))
     {
-        LAST_D = lastTime;
-        player->xPos = player->xPos + step;
-        if(player->xPos > (windWidth/2-30))
-            player->xPos = (windWidth/2-30);
+        LAST_D = 1;
+        player->pos.xPos = player->pos.xPos + step;
+        if(player->pos.xPos > (windWidth/2-30))
+            player->pos.xPos = (windWidth/2-30);
     }
     
     if(glfwGetKey(window, GLFW_KEY_SPACE))
     {
-        if(lastTime - LAST_SPACE >= KEY_LOCK_OUT*deltaTime)
+        if(GLOB_GAME_TICK - LAST_SPACE >= KEY_LOCK_OUT)
         {
-            LAST_SPACE = lastTime;
-            // ATTACKS_singleStraight(player,squareEntityCords,4,player->scale/2,200);
-            // ATTACKS_spreadShot(player,squareEntityCords,4, player->scale/4,200,120,30);
-            ATTACKS_radiusShot(player,squareEntityCords,4, player->scale/4,200,180,30,200);
+            LAST_SPACE = GLOB_GAME_TICK;
+            // ATTACKS_singleStraight(player,squareEntityCords,4,player->pos.scale/2,2);
+            ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
+            // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,5,180,1,200);
         }
     }
 
-    
 }
 
-void gameTick()
-{
-    
-}
 
 void updateProj()
 {
@@ -315,12 +302,13 @@ void updateProj()
     for (size_t i = 0; i < eListSize; i++)
     {
         ENTITY *e = eList[i];
-        if(e->type == TYPE_PLAY_MAIN || e->type == TYPE_ENEMY) 
-            continue;
-        // if(rn %1000 < 5)
-        //     ENTITY_updateDeg(e,e->degree + 40);
-        e->xPos = e->velocity * e->direction[0] * deltaTime + e->xPos;        
-        e->yPos = e->velocity * e->direction[1] * deltaTime + e->yPos;
+
+        e->pos.prevXPos = e->pos.xPos;
+        e->pos.prevYPos = e->pos.yPos;
+        // if(e->type == TYPE_PLAY_MAIN || e->type == TYPE_ENEMY) 
+        //     continue;
+        e->pos.xPos = e->pos.velocity * e->pos.direction[0] + e->pos.xPos;        
+        e->pos.yPos = e->pos.velocity * e->pos.direction[1] + e->pos.yPos;
     }
 }
 

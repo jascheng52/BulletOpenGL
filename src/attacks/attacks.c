@@ -55,16 +55,16 @@ void ATTACKS_singleStraight(ENTITY *e, float *projShape, size_t numVerts,
     ENTITY_vertexDirection(e,res, windHeight,windWidth);
 
     ENTITY *proj = ENTITY_create(projType,verts, numVerts, scale,
-        res[0],res[1],e->degree);
+        res[0],res[1],e->pos.degree);
     if(proj == NULL)
     {
         fprintf(stderr, "Out of memory");
         exit(EXIT_FAILURE);
     }
 
-    proj->velocity = velocity;
-    proj->xPos = proj->xPos + proj->direction[0] *proj->scale;
-    proj->yPos = proj->yPos + proj->direction[1] *proj->scale;
+    proj->pos.velocity = velocity;
+    proj->pos.xPos = proj->pos.xPos + proj->pos.direction[0] *proj->pos.scale;
+    proj->pos.yPos = proj->pos.yPos + proj->pos.direction[1] *proj->pos.scale;
     // ENTITY_printLoc(proj);
     ENTITY_eListAdd(proj);
 
@@ -120,7 +120,7 @@ void ATTACKS_spreadShot(ENTITY *e, float *projShape, size_t numVerts,
     else
         angApart = widthAngle / 2;
 
-    float currDegree = e->degree - widthAngle/2;
+    float currDegree = e->pos.degree - widthAngle/2;
     for(size_t i = 0; i < amount; i++)
     {
         vec2 *verts = malloc(sizeof(vec2) * numVerts);
@@ -140,9 +140,9 @@ void ATTACKS_spreadShot(ENTITY *e, float *projShape, size_t numVerts,
 
         // printf("PREOFFSET\n");
         // ENTITY_printLoc(proj);
-        proj->velocity = velocity;
-        proj->xPos = proj->xPos + proj->direction[0];
-        proj->yPos = proj->yPos + proj->direction[1];
+        proj->pos.velocity = velocity;
+        proj->pos.xPos = proj->pos.xPos + proj->pos.direction[0];
+        proj->pos.yPos = proj->pos.yPos + proj->pos.direction[1];
         // printf("AFTER\n");
         // ENTITY_printLoc(proj);
 
@@ -204,7 +204,7 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
     else
         angApart = widthAngle / 2;
 
-    float currDegree = e->degree - widthAngle/2;
+    float currDegree = e->pos.degree - widthAngle/2;
     for(size_t i = 0; i < amount; i++)
     {
         vec2 *verts = malloc(sizeof(vec2) * numVerts);
@@ -221,15 +221,16 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
             fprintf(stderr, "Out of memory");
             exit(EXIT_FAILURE);
         }
-        proj->velocity = velocity;
+        proj->pos.velocity = velocity;
 
         double rads = glm_rad(currDegree);
         double sinRes = sin(rads);
         double cosRes = cos(rads);
-        proj->xPos = proj->xPos + sinRes * radius;
-        proj->yPos = proj->yPos + cosRes * radius;
-        
-        ENTITY_updateDeg(proj, e->degree);
+        // POS_DATA *pos = &proj->pos;
+        proj->pos.xPos = proj->pos.xPos + sinRes * radius;
+        proj->pos.yPos = proj->pos.yPos + cosRes * radius;
+        // printf("XPos: %f", proj->pos.xPos);
+        ENTITY_updateDeg(proj, e->pos.degree);
 
         ENTITY_eListAdd(proj);
         currDegree = currDegree + angApart;

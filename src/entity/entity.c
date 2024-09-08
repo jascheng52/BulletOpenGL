@@ -48,37 +48,41 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
         fprintf(stderr, "Missing vertices arguments\n");
         return NULL;
     }
+    POS_DATA *pos = &entity->pos;
     entity->type = type;
-    entity->sizeVertices = lenVert;
-    entity->vertices = vertices;
-    entity->degree = deg;
-    entity->xPos = x;
-    entity->yPos = y;
-    entity->scale = scale;
+    pos->sizeVertices = lenVert;
+    pos->vertices = vertices;
+    pos->degree = deg;
+    pos->prevDeg = deg;
+    pos->xPos = x;
+    pos->prevXPos = x;
+    pos->yPos = y;
+    pos->prevYPos = y;
+    pos->scale = scale;
         
-    glmc_mat2_identity(entity->rotMat);
-    gen_rot_mat_up(deg, entity->rotMat);
+    glmc_mat2_identity(pos->rotMat);
+    gen_rot_mat_up(deg, pos->rotMat);
 
-    glmc_vec2_zero(entity->direction);
-    glmc_mat2_mulv(entity->rotMat,DEF_UP_DIR,entity->direction);
+    glmc_vec2_zero(pos->direction);
+    glmc_mat2_mulv(pos->rotMat,DEF_UP_DIR,pos->direction);
 
     for(size_t i = 0; i < lenVert; i++)
     {
-        glmc_vec2_zero(entity->vertices[i]);
-        glmc_vec2_scale(entity->vertices[i],scale,entity->vertices[i]);
-        glmc_mat2_mulv(entity->rotMat,entity->vertices[i],entity->vertices[i]); 
-        if(entity->vertices[i][0] > 10000)
+        glmc_vec2_zero(pos->vertices[i]);
+        glmc_vec2_scale(pos->vertices[i],scale,pos->vertices[i]);
+        glmc_mat2_mulv(pos->rotMat,pos->vertices[i],pos->vertices[i]); 
+        if(pos->vertices[i][0] > 10000)
         {
             printf("Overflow Here \n");  
             exit(EXIT_FAILURE);
         }
     }
 
-    entity->velocity = 0;
+    pos->velocity = 0;
     entity->hp = 0;
     entity->timeAlive = 0;
     entity->timeLeft = 0;
-    
+    entity->eFunct = NULL;
     return entity;
 }
 
@@ -91,7 +95,7 @@ void ENTITY_delete(ENTITY *entity)
         exit(EXIT_FAILURE);
     }
 
-    free(entity->vertices);
+    free(entity->pos.vertices);
     free(entity);
 }
 
@@ -102,25 +106,25 @@ int ENTITY_collide(ENTITY *e1, ENTITY *e2)
         fprintf(stderr, "Attempted to collide check null(s) entites at %p and %p\n",e1,e2);
         exit(EXIT_FAILURE);
     }
-
-    for(size_t i = 0; i < e1->sizeVertices; i++)
+    POS_DATA *e1Pos = &e1->pos;
+    for(size_t i = 0; i < e1Pos->sizeVertices; i++)
     {
         vec2 outerV1, outerV2;
-        ENTITY_worldCords(e1,e1->vertices[i],outerV1);
-        if(i == e1->sizeVertices - 1)
-            ENTITY_worldCords(e1,e1->vertices[0],outerV2);
+        ENTITY_worldCords(e1,e1Pos->vertices[i],outerV1);
+        if(i == e1Pos->sizeVertices - 1)
+            ENTITY_worldCords(e1,e1Pos->vertices[0],outerV2);
         else
-            ENTITY_worldCords(e1,e1->vertices[i + 1],outerV2);
+            ENTITY_worldCords(e1,e1Pos->vertices[i + 1],outerV2);
         
-
-        for(size_t j = 0; j < e2->sizeVertices; j++)
+        POS_DATA *e2Pos = &e2->pos;
+        for(size_t j = 0; j < e2Pos->sizeVertices; j++)
         {
             vec2 innerV1, innerV2;
-            ENTITY_worldCords(e2,e2->vertices[i],innerV1);
-            if(j == e2->sizeVertices - 1)
-                ENTITY_worldCords(e2,e2->vertices[0],innerV2);
+            ENTITY_worldCords(e2,e2Pos->vertices[i],innerV1);
+            if(j == e2Pos->sizeVertices - 1)
+                ENTITY_worldCords(e2,e2Pos->vertices[0],innerV2);
             else
-                ENTITY_worldCords(e2,e2->vertices[j + 1],innerV2);
+                ENTITY_worldCords(e2,e2Pos->vertices[j + 1],innerV2);
                 // glm_vec2_copy(e2->vertices[j + 1], innerV2);
             // printf("X:%f    Y:%f\n",e2->xPos, e2->yPos);
             // printf("SUMCHECK2\n");
@@ -150,26 +154,27 @@ int ENTITY_vertexDirection(ENTITY *e, vec2 res, float windHeight, float windWidt
     glmc_vec2_zero(v1);
     glmc_vec2_zero(v2);
 
+    POS_DATA *ePos = &e->pos;
     vec2 castRayOrigin, castRayEnd;
-    castRayOrigin[0] = e->xPos;
-    castRayOrigin[1] = e->yPos;
-    glmc_vec2_mul((vec2){windWidth,windHeight} ,e->direction,castRayEnd);
+    castRayOrigin[0] = ePos->xPos;
+    castRayOrigin[1] = ePos->yPos;
+    glmc_vec2_mul((vec2){windWidth,windHeight} ,ePos->direction,castRayEnd);
     glmc_vec2_add(castRayOrigin, castRayEnd, castRayEnd);
 
     // printf("RAY END\n");
     // glm_vec2_print(castRayEnd,stdout);
     // ENTITY_printLoc(e);
-    for(size_t i = 0; i < e->sizeVertices; i++)
+    for(size_t i = 0; i < ePos->sizeVertices; i++)
     {
         vec2 eV1, eV2;
-        ENTITY_worldCords(e,e->vertices[i],eV1);
-        if(i == (e->sizeVertices - 1) )
+        ENTITY_worldCords(e,ePos->vertices[i],eV1);
+        if(i == (ePos->sizeVertices - 1) )
         {
-            ENTITY_worldCords(e,e->vertices[0],eV2);
+            ENTITY_worldCords(e,ePos->vertices[0],eV2);
         }
         else
         {
-            ENTITY_worldCords(e,e->vertices[i+1],eV2);
+            ENTITY_worldCords(e,ePos->vertices[i+1],eV2);
 
         }
 
@@ -286,31 +291,34 @@ void ENTITY_eListFree()
 
 void ENTITY_updateDeg(ENTITY *e, float deg)
 {
+    POS_DATA *pos = &e->pos;
     if(e == NULL)
     {
         fprintf(stderr, "Attempted to update deg null entry deg\n");
         exit(EXIT_FAILURE);
     }
-    e->degree =deg;
-    e->direction[0]= sin(glm_deg(deg));
-    e->direction[1]= cos(glm_deg(deg));
-    gen_rot_mat_up(deg,e->rotMat);
-    glmc_mat2_mulv(e->rotMat,DEF_UP_DIR,e->direction);
+    pos->prevDeg = pos->degree;
+    pos->degree = deg;
+    pos->direction[0]= sin(glm_deg(deg));
+    pos->direction[1]= cos(glm_deg(deg));
+    gen_rot_mat_up(deg,pos->rotMat);
+    glmc_mat2_mulv(pos->rotMat,DEF_UP_DIR,pos->direction);
 
 }
 
 void ENTITY_printLoc(ENTITY * e)
 {
+    POS_DATA *pos = &e->pos;
     if(e == NULL)
     {
         fprintf(stderr,"Attempted to print null Entity\n");
         exit(EXIT_FAILURE);
     }
-    for(size_t i = 0; i < e->sizeVertices; i++)
+    for(size_t i = 0; i < pos->sizeVertices; i++)
     {
         vec2 location;
-        glm_mat2_mulv(e->rotMat,e->vertices[i],location);
-        glm_vec2_add(location,(vec2){e->xPos, e->yPos}, location);
+        glm_mat2_mulv(pos->rotMat,pos->vertices[i],location);
+        glm_vec2_add(location,(vec2){pos->xPos, pos->yPos}, location);
         glm_vec2_print(location,stdout);
     }
 }
@@ -333,13 +341,14 @@ int ENTITY_tickUpdate(ENTITY *e, size_t index)
 
 void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des)
 {
+
     if(e == NULL)
     {
         fprintf(stderr, "Attempted to calculate world cords on null entity\n");
     }
     
-    glmc_mat2_mulv(e->rotMat,v,des);
-    glm_vec2_add(des,(vec2){e->xPos,e->yPos}, des);
+    glmc_mat2_mulv(e->pos.rotMat,v,des);
+    glm_vec2_add(des,(vec2){e->pos.xPos,e->pos.yPos}, des);
 }
 
 

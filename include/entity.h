@@ -18,24 +18,36 @@ typedef enum en_group
     OPPONENT
 }EN_GROUP;
 
-//deg should be updated via update deg
-typedef struct entity
+//Stores positional information for an entity
+typedef struct pos_data
 {
-    EN_TYPE type;
-    EN_GROUP group;
     size_t sizeVertices;
     vec2 *vertices;
     vec2 direction;
     mat2 rotMat;
     float degree;
+    float prevDeg;
     float xPos;
     float yPos;
+    float prevXPos;
+    float prevYPos;
     float velocity;
     float scale;
+}POS_DATA;
+//deg should be updated via update deg
+typedef struct entity
+{
+    EN_TYPE type;
+    EN_GROUP group;
+    POS_DATA pos;
     int hp;
     size_t timeAlive; 
     size_t timeLeft;
+    void (*eFunct)(struct entity *,size_t);
 }ENTITY;
+
+
+
 
 #define DEF_MAX_ENTITY 1000
 extern size_t ENTITY_maxSize;
