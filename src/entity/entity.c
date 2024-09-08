@@ -82,7 +82,7 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     entity->hp = 0;
     entity->timeAlive = 0;
     entity->timeLeft = 0;
-    entity->eFunct = NULL;
+    entity->aiAction = NULL;
     return entity;
 }
 
@@ -297,6 +297,7 @@ void ENTITY_updateDeg(ENTITY *e, float deg)
         fprintf(stderr, "Attempted to update deg null entry deg\n");
         exit(EXIT_FAILURE);
     }
+    
     pos->prevDeg = pos->degree;
     pos->degree = deg;
     pos->direction[0]= sin(glm_deg(deg));

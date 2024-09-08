@@ -29,7 +29,7 @@ extern float lineBuffer[4];
 
 
 //Input handeling
-#define KEY_LOCK_OUT 120
+#define KEY_LOCK_OUT 60
 extern double LAST_W;
 extern double LAST_A;
 extern double LAST_S;

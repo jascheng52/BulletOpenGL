@@ -94,12 +94,12 @@ int main(int argc, char *argv[])
 
     vec2 *playerVerts = malloc(sizeof(vec2) * 4);
     memcpy(playerVerts,squareEntityCords,8 * sizeof(float));
-    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,0, 0);
+    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,0, 90);
     player->hp = 100;
     
     vec2 *otherVerts = malloc(sizeof(vec2) * 4);
     memcpy(otherVerts,squareEntityCords,8 * sizeof(float));
-    ENTITY *other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 0);
+    ENTITY *other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 90);
     other->hp = 1000;
 
     ENTITY_eListInit(DEF_MAX_ENTITY);
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
     if(lineShader == NULL)
         exit(EXIT_FAILURE);
 
-    const float MAX_FPS = DEF_TICK_RATE;
+    const float MAX_FPS = DEF_TICK_RATE; 
     const float SKIP_TICK = 1000/MAX_FPS/1000;
     double nextTick = glfwGetTime();
     while(!glfwWindowShouldClose(window))
@@ -196,23 +196,15 @@ int main(int argc, char *argv[])
             SHADER_setFloat(squareEntityShader,"xPos",eList[i]->pos.prevXPos + interpolation * (eList[i]->pos.xPos - eList[i]->pos.prevXPos) );
             SHADER_setFloat(squareEntityShader,"yPos",eList[i]->pos.prevYPos + interpolation * (eList[i]->pos.yPos - eList[i]->pos.prevYPos) );
             // printf("INTER:%f\n", interpolation);
-            if(eList[i]->type == TYPE_PLAY_PROJ)
-            {
-                printf("INTER DEG: %f\n", eList[i]->pos.prevDeg);
-            }
             float interDeg = eList[i]->pos.prevDeg + interpolation * (eList[i]->pos.degree - eList[i]->pos.prevDeg);
-            // if(i != 0 && i != 1)
-            // {
-            //     printf("prev: %f\n", eList[i]->pos.prevDeg);
-            //     printf("curr: %f\n", eList[i]->pos.degree );
-            //     printf("interpolation: %f\n", interpolation );
-            //     printf("interDeg: %f\n", interDeg);
-            // }
-            mat2 rotMat;
-            gen_rot_mat_up(interDeg,rotMat);
             
+            // mat2 rotMat;
+            // if(eList[i]->pos.degree != eList[i]->pos.prevDeg)
+            //     gen_rot_mat_up(interDeg,rotMat);
+            // else
+            //     glmc_mat2_copy(eList[i]->pos.rotMat,rotMat);
             SHADER_setFloat(squareEntityShader, "scale", eList[i]->pos.scale);
-            SHADER_setMat2(squareEntityShader, "rotMat",rotMat);
+            SHADER_setMat2(squareEntityShader, "rotMat",eList[i]->pos.rotMat);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
         }
   
@@ -288,8 +280,8 @@ void userInput(GLFWwindow *window , ENTITY *player)
         {
             LAST_SPACE = GLOB_GAME_TICK;
             // ATTACKS_singleStraight(player,squareEntityCords,4,player->pos.scale/2,2);
-            ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
-            // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,5,180,1,200);
+            // ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
+            ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,-180,50,300);
         }
     }
 

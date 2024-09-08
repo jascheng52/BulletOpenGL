@@ -2,7 +2,7 @@
 #define __entity_h__
 
 #include <cglm/call.h>
-
+#include <aiDataStructs.h>
 
 typedef enum en_type
 {
@@ -43,7 +43,8 @@ typedef struct entity
     int hp;
     size_t timeAlive; 
     size_t timeLeft;
-    void (*eFunct)(struct entity *,size_t);
+    void (*aiAction)(struct entity *,size_t);
+    AI_DATA *aiData;
 }ENTITY;
 
 
@@ -91,6 +92,7 @@ void ENTITY_eListDelete(size_t index);
 void ENTITY_eListFree();
 
 //Updates the degrees,direction vector, and rotational matrix
+//Sets the previous degree
 void ENTITY_updateDeg(ENTITY *e, float deg);
 
 //Handles actions to be done at every game tick

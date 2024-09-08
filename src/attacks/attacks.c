@@ -141,8 +141,8 @@ void ATTACKS_spreadShot(ENTITY *e, float *projShape, size_t numVerts,
         // printf("PREOFFSET\n");
         // ENTITY_printLoc(proj);
         proj->pos.velocity = velocity;
-        proj->pos.xPos = proj->pos.xPos + proj->pos.direction[0];
-        proj->pos.yPos = proj->pos.yPos + proj->pos.direction[1];
+        proj->pos.xPos = proj->pos.xPos;
+        proj->pos.yPos = proj->pos.yPos;
         // printf("AFTER\n");
         // ENTITY_printLoc(proj);
 
@@ -231,6 +231,7 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
         proj->pos.yPos = proj->pos.yPos + cosRes * radius;
         // printf("XPos: %f", proj->pos.xPos);
         ENTITY_updateDeg(proj, e->pos.degree);
+        proj->pos.prevDeg = proj->pos.degree;
 
         ENTITY_eListAdd(proj);
         currDegree = currDegree + angApart;
