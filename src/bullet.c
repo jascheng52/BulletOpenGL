@@ -94,12 +94,14 @@ int main(int argc, char *argv[])
 
     vec2 *playerVerts = malloc(sizeof(vec2) * 4);
     memcpy(playerVerts,squareEntityCords,8 * sizeof(float));
-    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,0, 90);
+    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,0, 0);
+    ENTITY_updateDeg(player,player->pos.degree);
     player->hp = 100;
     
     vec2 *otherVerts = malloc(sizeof(vec2) * 4);
     memcpy(otherVerts,squareEntityCords,8 * sizeof(float));
-    ENTITY *other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 90);
+    ENTITY *other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 0);
+    ENTITY_updateDeg(other,player->pos.degree);
     other->hp = 1000;
 
     ENTITY_eListInit(DEF_MAX_ENTITY);
@@ -155,7 +157,7 @@ int main(int argc, char *argv[])
         {
             // printf("Polling user input");
             userInput(window,player);
-            // ENTITY_updateDeg(player,player->pos.degree + 5);
+            ENTITY_updateDeg(player,player->pos.degree + 5);
             updateProj();
             nextTick = nextTick + SKIP_TICK;
             // printf("Next tick at :%lf\n", nextTick);
@@ -196,15 +198,12 @@ int main(int argc, char *argv[])
             SHADER_setFloat(squareEntityShader,"xPos",eList[i]->pos.prevXPos + interpolation * (eList[i]->pos.xPos - eList[i]->pos.prevXPos) );
             SHADER_setFloat(squareEntityShader,"yPos",eList[i]->pos.prevYPos + interpolation * (eList[i]->pos.yPos - eList[i]->pos.prevYPos) );
             // printf("INTER:%f\n", interpolation);
-            float interDeg = eList[i]->pos.prevDeg + interpolation * (eList[i]->pos.degree - eList[i]->pos.prevDeg);
-            
-            // mat2 rotMat;
-            // if(eList[i]->pos.degree != eList[i]->pos.prevDeg)
-            //     gen_rot_mat_up(interDeg,rotMat);
-            // else
-            //     glmc_mat2_copy(eList[i]->pos.rotMat,rotMat);
+            mat4 rotMat;
+            versor q;
+            glmc_quat_slerp(eList[i]->pos.prevQuat,eList[i]->pos.rotQuat,interpolation,q);
+            glmc_quat_mat4(q,rotMat);
             SHADER_setFloat(squareEntityShader, "scale", eList[i]->pos.scale);
-            SHADER_setMat2(squareEntityShader, "rotMat",eList[i]->pos.rotMat);
+            SHADER_setMat4(squareEntityShader, "rotMat",rotMat);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
         }
   

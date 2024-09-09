@@ -24,7 +24,8 @@ typedef struct pos_data
     size_t sizeVertices;
     vec2 *vertices;
     vec2 direction;
-    mat2 rotMat;
+    versor rotQuat;
+    versor prevQuat;
     float degree;
     float prevDeg;
     float xPos;
@@ -62,6 +63,7 @@ extern ENTITY **eList ;
 //scale is mult by shader vertices
 //xy is 2d position, xy direction expected to be normailized
 //deg is degrees offset from 0,1 vector counter clockwise
+//previous fields must be initialized manually
 ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     float scale, float x,float y, float deg);
 

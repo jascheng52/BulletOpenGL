@@ -59,23 +59,28 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     pos->yPos = y;
     pos->prevYPos = y;
     pos->scale = scale;
-        
-    glmc_mat2_identity(pos->rotMat);
-    gen_rot_mat_up(deg, pos->rotMat);
-
+    
+    glmc_quat_identity(pos->rotQuat);
+    glmc_quat(pos->rotQuat,glm_rad(deg),0,0,1);
+    
     glmc_vec2_zero(pos->direction);
-    glmc_mat2_mulv(pos->rotMat,DEF_UP_DIR,pos->direction);
+    vec3 dir;
+    glmc_quat_rotatev(pos->rotQuat,(vec3){1,0,0},dir);
+    pos->direction[0] = dir[0];
+    pos->direction[1] = dir[1];
 
     for(size_t i = 0; i < lenVert; i++)
     {
         glmc_vec2_zero(pos->vertices[i]);
         glmc_vec2_scale(pos->vertices[i],scale,pos->vertices[i]);
-        glmc_mat2_mulv(pos->rotMat,pos->vertices[i],pos->vertices[i]); 
-        if(pos->vertices[i][0] > 10000)
-        {
-            printf("Overflow Here \n");  
-            exit(EXIT_FAILURE);
-        }
+        
+        vec2 vert;
+        glmc_vec2_copy(pos->vertices[i],vert);
+        vec3 dir;
+        glmc_quat_rotatev(pos->rotQuat,(vec3){vert[0],vert[1],0},dir);
+        vert[0] = dir[0];
+        vert[1] = dir[1];
+        glmc_vec2_copy(vert,pos->vertices[i]);
     }
 
     pos->velocity = 0;
@@ -203,12 +208,9 @@ int ENTITY_vertexDirection(ENTITY *e, vec2 res, float windHeight, float windWidt
     if(!e1Detected)
         return 0;
 
-    // ENTITY_printLoc(e);
     res[0] = (v1[0] + v2[0]) / 2;
     res[1] = (v1[1] + v2[1]) / 2;
-    // glmc_mat2_mulv(e->rotMat,res,res);
-    // printf("Edge detected");
-    // glm_vec2_print(res,stdout);
+    
     return 1;
 }
 
@@ -300,11 +302,17 @@ void ENTITY_updateDeg(ENTITY *e, float deg)
     
     pos->prevDeg = pos->degree;
     pos->degree = deg;
-    pos->direction[0]= sin(glm_deg(deg));
-    pos->direction[1]= cos(glm_deg(deg));
-    gen_rot_mat_up(deg,pos->rotMat);
-    glmc_mat2_mulv(pos->rotMat,DEF_UP_DIR,pos->direction);
 
+    versor q;
+    glmc_quat(q,glm_rad(deg),0,0,1);
+    glmc_quat_copy(e->pos.rotQuat,e->pos.prevQuat);
+    glmc_quat_copy(q, e->pos.rotQuat);
+
+    vec3 dir;
+    glmc_quat_rotatev(q ,(vec3){1,0,0},dir);
+    pos->direction[0] = dir[0];
+    pos->direction[1] = dir[1];
+    
 }
 
 void ENTITY_printLoc(ENTITY * e)
@@ -317,8 +325,12 @@ void ENTITY_printLoc(ENTITY * e)
     }
     for(size_t i = 0; i < pos->sizeVertices; i++)
     {
+        vec3 qLoc;
+        glmc_quat_rotatev(pos->rotQuat,(vec3){pos->vertices[i][0],pos->vertices[i][1],0},qLoc);
         vec2 location;
-        glm_mat2_mulv(pos->rotMat,pos->vertices[i],location);
+        location[0] = qLoc[0];
+        location[1] = qLoc[1];
+
         glm_vec2_add(location,(vec2){pos->xPos, pos->yPos}, location);
         glm_vec2_print(location,stdout);
     }
@@ -348,7 +360,11 @@ void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des)
         fprintf(stderr, "Attempted to calculate world cords on null entity\n");
     }
     
-    glmc_mat2_mulv(e->pos.rotMat,v,des);
+    POS_DATA *pos = &e->pos;
+    vec3 qLoc;
+    glmc_quat_rotatev(pos->rotQuat,(vec3){v[0],v[1],0},qLoc);
+    des[0] = qLoc[0];
+    des[1] = qLoc[1];
     glm_vec2_add(des,(vec2){e->pos.xPos,e->pos.yPos}, des);
 }
 

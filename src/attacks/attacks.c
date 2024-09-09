@@ -63,8 +63,10 @@ void ATTACKS_singleStraight(ENTITY *e, float *projShape, size_t numVerts,
     }
 
     proj->pos.velocity = velocity;
+    ENTITY_updateDeg(proj, proj->pos.degree);
     proj->pos.xPos = proj->pos.xPos + proj->pos.direction[0] *proj->pos.scale;
     proj->pos.yPos = proj->pos.yPos + proj->pos.direction[1] *proj->pos.scale;
+
     // ENTITY_printLoc(proj);
     ENTITY_eListAdd(proj);
 
@@ -138,15 +140,11 @@ void ATTACKS_spreadShot(ENTITY *e, float *projShape, size_t numVerts,
             exit(EXIT_FAILURE);
         }
 
-        // printf("PREOFFSET\n");
-        // ENTITY_printLoc(proj);
+        
         proj->pos.velocity = velocity;
         proj->pos.xPos = proj->pos.xPos;
         proj->pos.yPos = proj->pos.yPos;
-        // printf("AFTER\n");
-        // ENTITY_printLoc(proj);
-
-
+        ENTITY_updateDeg(e,proj->pos.degree);
         ENTITY_eListAdd(proj);
         // printf("Prev %f\n", currDegree);
         currDegree = currDegree + angApart;
@@ -232,7 +230,6 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
         // printf("XPos: %f", proj->pos.xPos);
         ENTITY_updateDeg(proj, e->pos.degree);
         proj->pos.prevDeg = proj->pos.degree;
-
         ENTITY_eListAdd(proj);
         currDegree = currDegree + angApart;
     }
