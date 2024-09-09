@@ -54,6 +54,7 @@ void ATTACKS_singleStraight(ENTITY *e, float *projShape, size_t numVerts,
     vec2 res;
     ENTITY_vertexDirection(e,res, windHeight,windWidth);
 
+
     ENTITY *proj = ENTITY_create(projType,verts, numVerts, scale,
         res[0],res[1],e->pos.degree);
     if(proj == NULL)
@@ -63,10 +64,10 @@ void ATTACKS_singleStraight(ENTITY *e, float *projShape, size_t numVerts,
     }
 
     proj->pos.velocity = velocity;
-    ENTITY_updateDeg(proj, proj->pos.degree);
     proj->pos.xPos = proj->pos.xPos + proj->pos.direction[0] *proj->pos.scale;
     proj->pos.yPos = proj->pos.yPos + proj->pos.direction[1] *proj->pos.scale;
-
+    proj->pos.prevDeg = proj->pos.degree;
+    glmc_quat_copy(proj->pos.rotQuat, proj->pos.prevQuat);
     // ENTITY_printLoc(proj);
     ENTITY_eListAdd(proj);
 
@@ -131,7 +132,7 @@ void ATTACKS_spreadShot(ENTITY *e, float *projShape, size_t numVerts,
             fprintf(stderr,"Out of Memory\n");
             exit(EXIT_FAILURE);
         }
-        
+        memcpy(verts, projShape, sizeof(vec2) * numVerts);
         ENTITY *proj = ENTITY_create(projType,verts, numVerts, scale,
         res[0],res[1],currDegree);
         if(proj == NULL)
@@ -144,7 +145,9 @@ void ATTACKS_spreadShot(ENTITY *e, float *projShape, size_t numVerts,
         proj->pos.velocity = velocity;
         proj->pos.xPos = proj->pos.xPos;
         proj->pos.yPos = proj->pos.yPos;
-        ENTITY_updateDeg(e,proj->pos.degree);
+        proj->pos.prevDeg = proj->pos.degree;
+        glmc_quat_copy(proj->pos.rotQuat, proj->pos.prevQuat);
+
         ENTITY_eListAdd(proj);
         // printf("Prev %f\n", currDegree);
         currDegree = currDegree + angApart;
@@ -211,7 +214,7 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
             fprintf(stderr,"Out of Memory\n");
             exit(EXIT_FAILURE);
         }
-        
+        memcpy(verts, projShape, sizeof(vec2) * numVerts);
         ENTITY *proj = ENTITY_create(projType,verts, numVerts, scale,
         res[0],res[1],currDegree);
         if(proj == NULL)

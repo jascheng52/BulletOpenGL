@@ -8,8 +8,6 @@
 #include <math.h>
 float EPSILON = 0.001;
 
-//0 degrees from up_dir would be (0,1)
-vec2 DEF_UP_DIR = {0,1};
 
 size_t ENTITY_maxSize  = DEF_MAX_ENTITY;
 size_t eListSize = 0;
@@ -71,9 +69,8 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
 
     for(size_t i = 0; i < lenVert; i++)
     {
-        glmc_vec2_zero(pos->vertices[i]);
+        // glmc_vec2_zero(pos->vertices[i]);
         glmc_vec2_scale(pos->vertices[i],scale,pos->vertices[i]);
-        
         vec2 vert;
         glmc_vec2_copy(pos->vertices[i],vert);
         vec3 dir;
@@ -125,7 +122,7 @@ int ENTITY_collide(ENTITY *e1, ENTITY *e2)
         for(size_t j = 0; j < e2Pos->sizeVertices; j++)
         {
             vec2 innerV1, innerV2;
-            ENTITY_worldCords(e2,e2Pos->vertices[i],innerV1);
+            ENTITY_worldCords(e2,e2Pos->vertices[j],innerV1);
             if(j == e2Pos->sizeVertices - 1)
                 ENTITY_worldCords(e2,e2Pos->vertices[0],innerV2);
             else
@@ -257,6 +254,8 @@ void ENTITY_eListAdd(ENTITY *e)
         }
         ENTITY_maxSize = ENTITY_maxSize + DEF_MAX_ENTITY;
     }
+    
+
     eList[eListSize] = e;
     eListSize++;
 }
@@ -361,11 +360,7 @@ void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des)
     }
     
     POS_DATA *pos = &e->pos;
-    vec3 qLoc;
-    glmc_quat_rotatev(pos->rotQuat,(vec3){v[0],v[1],0},qLoc);
-    des[0] = qLoc[0];
-    des[1] = qLoc[1];
-    glm_vec2_add(des,(vec2){e->pos.xPos,e->pos.yPos}, des);
+    glm_vec2_add(v,(vec2){pos->xPos,pos->yPos}, des);
 }
 
 
@@ -480,32 +475,3 @@ int collinear(vec2 a1, vec2 a2, vec2 b)
     return a;
 }
 
-void gen_rot_mat(vec2 rot, vec2 target, mat2 des)
-{
-    vec2 rotNorm,targNorm;
-    glmc_vec2_copy(rot, rotNorm);
-    glmc_vec2_copy(target,targNorm);
-    glmc_vec2_normalize(rotNorm);
-    // glmc_vec2_normalize(targNorm);
-    //ned to fix
-    des[0][0] = rotNorm[0]*targNorm[0] + rotNorm[1]*targNorm[1];
-    des[0][1] = rotNorm[0]*targNorm[1] - rotNorm[1]*targNorm[0];
-    des[1][0] = -(rotNorm[0]*targNorm[1] - rotNorm[1]*targNorm[0] );
-    des[1][1] = rotNorm[0]*targNorm[0] + rotNorm[1]*targNorm[1];
-
-}
-
-
-void gen_rot_mat_up(float deg,mat2 des)
-{
-    if(deg == 0)
-    {
-        glmc_mat2_identity(des);
-    }
-    float sinVal = sin(glm_rad(deg));
-    float cosVal = cos(glm_rad(deg));
-    des[0][0] = cosVal;
-    des[0][1] = -sinVal;
-    des[1][0] = sinVal;
-    des[1][1] = cosVal;
-}

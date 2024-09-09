@@ -36,6 +36,7 @@ typedef struct pos_data
     float scale;
 }POS_DATA;
 //deg should be updated via update deg
+//deg from right x axis dir
 typedef struct entity
 {
     EN_TYPE type;
@@ -54,16 +55,19 @@ typedef struct entity
 #define DEF_MAX_ENTITY 1000
 extern size_t ENTITY_maxSize;
 extern size_t eListSize;
+#define ELIST_PLAY_INDEX 0;
+extern size_t lastEnemyIndex;
+extern size_t firstProjIndex;
 extern ENTITY **eList ;
 
 //Creates an entity
 //Assumes the vertices are already allocated
-//Assume coordinates are given in Counter Clockwise
+//Assume coordinates are given in Counter Clockwise 
 //Takes ownership in releasing vertices memory using delete
 //scale is mult by shader vertices
 //xy is 2d position, xy direction expected to be normailized
 //deg is degrees offset from 0,1 vector counter clockwise
-//previous fields must be initialized manually
+//previous fields(prev quat) must be initialized
 ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     float scale, float x,float y, float deg);
 
@@ -119,16 +123,5 @@ int onRight(vec2 a1, vec2 a2, vec2 b);
 
 //Checks if point b is on of line a
 int collinear(vec2 a1, vec2 a2, vec2 b);
-
-//Gen rotational matrix
-//to rotate rot to target direction and stores in des
-//Mult des and rot to get target
-//implemented: https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
-void gen_rot_mat(vec2 rot, vec2 target, mat2 des);
-
-//Generate rotational matrix at des with angle
-//respect to DEF_UP_DIR, clockwise
-void gen_rot_mat_up(float deg, mat2 des);
-
 
 #endif

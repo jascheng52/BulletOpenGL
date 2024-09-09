@@ -3,6 +3,7 @@
 
 #include <GLFW/glfw3.h>
 #include <entity.h>
+#include <unorderList.h>
 
 #define DEF_TICK_RATE 120
 #define DEF_MAX_TICK_SKIP 20
@@ -26,7 +27,9 @@ extern int arrowEntityOrder[6];
 extern float lineBuffer[4];
 
 
-
+extern LIST_UNORD * E_LIST[2];
+#define LIST_ENEM 0
+#define LIST_PROJ 1
 
 //Input handeling
 #define KEY_LOCK_OUT 60

@@ -94,15 +94,16 @@ int main(int argc, char *argv[])
 
     vec2 *playerVerts = malloc(sizeof(vec2) * 4);
     memcpy(playerVerts,squareEntityCords,8 * sizeof(float));
-    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,0, 0);
-    ENTITY_updateDeg(player,player->pos.degree);
+    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,70, 45);
+    glmc_quat_copy(player->pos.rotQuat, player->pos.prevQuat);
     player->hp = 100;
     
     vec2 *otherVerts = malloc(sizeof(vec2) * 4);
     memcpy(otherVerts,squareEntityCords,8 * sizeof(float));
     ENTITY *other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 0);
-    ENTITY_updateDeg(other,player->pos.degree);
-    other->hp = 1000;
+    glmc_quat_copy(other->pos.rotQuat, other->pos.prevQuat);
+
+    other->hp = 100000;
 
     ENTITY_eListInit(DEF_MAX_ENTITY);
     ENTITY_eListAdd(player);
@@ -157,7 +158,7 @@ int main(int argc, char *argv[])
         {
             // printf("Polling user input");
             userInput(window,player);
-            ENTITY_updateDeg(player,player->pos.degree + 5);
+            ENTITY_updateDeg(player,player->pos.degree);
             updateProj();
             nextTick = nextTick + SKIP_TICK;
             // printf("Next tick at :%lf\n", nextTick);
@@ -179,8 +180,24 @@ int main(int argc, char *argv[])
             switch (eList[i]->type)
             {
                 case TYPE_PLAY_MAIN:
+                    if(ENTITY_collide(eList[i], other))
+                    {
+                        SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){0,0,1});  
+                        // printf("Collide\n");  
+                    }
+                    // else
+                        // printf("Not Collide\n");  
+
                     break;
                 case TYPE_PLAY_PROJ:
+                    if(ENTITY_collide(eList[i], other))
+                    {
+                        other->hp = other->hp - 10;
+                        printf("hit %d\n", other->hp);
+                        ENTITY_eListDelete(i);
+                        i--;
+                    }
+                
                     break;
                 case TYPE_ENEMY:
                     if(eList[i]->hp == 0)
@@ -279,8 +296,8 @@ void userInput(GLFWwindow *window , ENTITY *player)
         {
             LAST_SPACE = GLOB_GAME_TICK;
             // ATTACKS_singleStraight(player,squareEntityCords,4,player->pos.scale/2,2);
-            // ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
-            ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,-180,50,300);
+            ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
+            // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,-180,50,300);
         }
     }
 
