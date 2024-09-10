@@ -52,14 +52,6 @@ typedef struct entity
 
 
 
-#define DEF_MAX_ENTITY 1000
-extern size_t ENTITY_maxSize;
-extern size_t eListSize;
-#define ELIST_PLAY_INDEX 0;
-extern size_t lastEnemyIndex;
-extern size_t firstProjIndex;
-extern ENTITY **eList ;
-
 //Creates an entity
 //Assumes the vertices are already allocated
 //Assume coordinates are given in Counter Clockwise 
@@ -83,28 +75,10 @@ int ENTITY_collide(ENTITY *e1, ENTITY *e2);
 // Returns fail/success
 int ENTITY_vertexDirection(ENTITY *e, vec2 res, float windHeight, float windWidth);
 
-//Initializes array for entities of max_size into eList
-//Only one elist at time to avoid corruption
-//Caller frees elist
-void ENTITY_eListInit(size_t max_size);
-
-//Adds *entity to end of elist. Resizes list by DEF_MAX * 2
-void ENTITY_eListAdd(ENTITY *e);
-
-//Deletes *entity at index. Swaps last entry to index
-void ENTITY_eListDelete(size_t index);
-
-//Frees the elist, frees all elist entries
-void ENTITY_eListFree();
-
 //Updates the degrees,direction vector, and rotational matrix
 //Sets the previous degree
 void ENTITY_updateDeg(ENTITY *e, float deg);
 
-//Handles actions to be done at every game tick
-//including timeAlive, Should be done via update loop
-//Returns true if entity is deleted
-int ENTITY_tickUpdate(ENTITY *e, size_t index);
 
 //Calculate window cords of v based on e and store in des
 void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des);

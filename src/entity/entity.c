@@ -1,17 +1,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <entity.h>
+#include <bullet.h>
+#include <unorderList.h>
 #include <math.h>
 
 #include <cglm/call.h>
 #include <cglm/util.h>
 #include <math.h>
+
 float EPSILON = 0.001;
 
-
-size_t ENTITY_maxSize  = DEF_MAX_ENTITY;
-size_t eListSize = 0;
-ENTITY **eList = NULL;
 
 ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert, 
     float scale, float x,float y,float deg)
@@ -60,7 +59,8 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     
     glmc_quat_identity(pos->rotQuat);
     glmc_quat(pos->rotQuat,glm_rad(deg),0,0,1);
-    
+    glmc_quat_identity(pos->prevQuat);
+
     glmc_vec2_zero(pos->direction);
     vec3 dir;
     glmc_quat_rotatev(pos->rotQuat,(vec3){1,0,0},dir);
@@ -211,85 +211,6 @@ int ENTITY_vertexDirection(ENTITY *e, vec2 res, float windHeight, float windWidt
     return 1;
 }
 
-
-
-void ENTITY_eListInit(size_t max_size)
-{
-    if(eList != NULL)
-    {
-        fprintf(stderr, "Tried to initialize enity list when already initialized\n");
-        exit(EXIT_FAILURE);
-    }
-    
-    eList = calloc(max_size, sizeof(ENTITY *));
-    if(eList == NULL)
-    {
-        fprintf(stderr, "Failed to initialize enity list\n");
-        exit(EXIT_FAILURE);
-    }
-    if(max_size > ENTITY_maxSize)
-        ENTITY_maxSize = max_size;
-}
-void ENTITY_eListAdd(ENTITY *e)
-{
-    // printf("List Size%lld\n",eListSize);
-    if(e == NULL)
-    {
-        fprintf(stderr, "Attempted to add Null Entity\n");
-        exit(EXIT_FAILURE);
-    }
-    if(eList == NULL)
-    {
-        fprintf(stderr, "Entity List is not initialized\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if(eListSize == ENTITY_maxSize)
-    {
-        eList = realloc(eList,(ENTITY_maxSize + DEF_MAX_ENTITY) * sizeof(ENTITY *));
-        if(eList == NULL)
-        {
-            fprintf(stderr, "Failed to resize enity list\n");
-            exit(EXIT_FAILURE);
-        }
-        ENTITY_maxSize = ENTITY_maxSize + DEF_MAX_ENTITY;
-    }
-    
-
-    eList[eListSize] = e;
-    eListSize++;
-}
-void ENTITY_eListDelete(size_t index)
-{
-    if(index >= eListSize)
-    {
-        fprintf(stderr, "Attempted to access out of bound eList index:%lld\n", index);
-        exit(EXIT_FAILURE);
-    }
-    ENTITY *delE = eList[index];
-    eList[index] = eList[eListSize - 1];
-    eList[eListSize - 1] = NULL;
-    eListSize--;
-    ENTITY_delete(delE);
-}
-
-void ENTITY_eListFree()
-{
-    if(eList == NULL)
-    {
-        fprintf(stderr, "Tried to free enity list when already initialized\n");
-        exit(EXIT_FAILURE);
-    }
-    for(size_t i = 0; i < eListSize; i++)
-    {
-        free(eList[i]);
-    }
-    free(eList);
-    eList = NULL;
-    eListSize = 0;
-    ENTITY_maxSize = DEF_MAX_ENTITY;
-}
-
 void ENTITY_updateDeg(ENTITY *e, float deg)
 {
     POS_DATA *pos = &e->pos;
@@ -335,21 +256,7 @@ void ENTITY_printLoc(ENTITY * e)
     }
 }
 
-int ENTITY_tickUpdate(ENTITY *e, size_t index)
-{
-    if(e == NULL)
-    {
-        fprintf(stderr,"Attempted to update tick null Entity\n");
-        exit(EXIT_FAILURE);
-    }
-    e->timeAlive++;
-    if(e->timeAlive > e->timeLeft)
-    {
-        ENTITY_eListDelete(index);
-        return 1;
-    }
-    return 0;
-}
+
 
 void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des)
 {

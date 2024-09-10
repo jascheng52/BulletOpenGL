@@ -69,8 +69,12 @@ void ATTACKS_singleStraight(ENTITY *e, float *projShape, size_t numVerts,
     proj->pos.prevDeg = proj->pos.degree;
     glmc_quat_copy(proj->pos.rotQuat, proj->pos.prevQuat);
     // ENTITY_printLoc(proj);
-    ENTITY_eListAdd(proj);
-
+    E_LIST[LIST_PROJ] = LIST_UNORD_add(E_LIST[LIST_PROJ],proj);
+    if(E_LIST[LIST_PROJ] == NULL)
+    {
+        fprintf(stderr,"Failed to add straight proj to list attack single straight\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 
@@ -148,7 +152,12 @@ void ATTACKS_spreadShot(ENTITY *e, float *projShape, size_t numVerts,
         proj->pos.prevDeg = proj->pos.degree;
         glmc_quat_copy(proj->pos.rotQuat, proj->pos.prevQuat);
 
-        ENTITY_eListAdd(proj);
+        E_LIST[LIST_PROJ] = LIST_UNORD_add(E_LIST[LIST_PROJ],proj);
+        if(E_LIST[LIST_PROJ] == NULL)
+        {
+            fprintf(stderr,"Failed to add straight proj to list attack spread\n");
+            exit(EXIT_FAILURE);
+        }
         // printf("Prev %f\n", currDegree);
         currDegree = currDegree + angApart;
 
@@ -233,7 +242,14 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
         // printf("XPos: %f", proj->pos.xPos);
         ENTITY_updateDeg(proj, e->pos.degree);
         proj->pos.prevDeg = proj->pos.degree;
-        ENTITY_eListAdd(proj);
+
+        E_LIST[LIST_PROJ] = LIST_UNORD_add(E_LIST[LIST_PROJ],proj);
+        if(E_LIST[LIST_PROJ] == NULL)
+        {
+            fprintf(stderr,"Failed to add straight proj to list radius spread\n");
+            exit(EXIT_FAILURE);
+        }
+
         currDegree = currDegree + angApart;
     }
     

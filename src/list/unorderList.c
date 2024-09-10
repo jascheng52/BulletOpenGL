@@ -1,15 +1,19 @@
 #include <stdlib.h>
 #include <unorderList.h>
-
+#include <string.h>
 
 
 LIST_UNORD *LIST_UNORD_create(size_t defMax)
 {
-    LIST_UNORD *newList = malloc(sizeof(size_t)*2 + sizeof(void *) * defMax);
+    LIST_UNORD *newList = malloc(sizeof(*newList));
     if(newList == NULL)
         return NULL;
     newList->size = 0;
     newList->max = defMax;
+    void **elementList = malloc(sizeof(void *) * defMax);
+    if(elementList == NULL)
+        return NULL; 
+    newList->elements = elementList;
     return newList; 
 }
 
@@ -28,15 +32,22 @@ void *LIST_UNORD_add(LIST_UNORD *list, void *e)
 
     if(list->size == list->max)
     {
-        list->elements = realloc(list->elements,(list->max*2) * sizeof(void *));
-        if(list->elements == NULL)
+        void **temp = malloc(sizeof(void *) *(list->max));
+        memcpy(temp,list->elements, sizeof(void *) *(list->max));
+
+        void **newElements;
+        newElements = realloc(list->elements,sizeof(void *) *(list->max) * 2);
+        if(newElements == NULL)
             return NULL;
+        list->elements = newElements;
         list->max = list->max * 2;
+        memcpy(newElements,temp, sizeof(void *) * list->size);
+        free(temp);
     }
 
     list->elements[list->size] = e;
     list->size++;
-    return e;
+    return list;
 }
 
 void *LIST_UNORD_del(LIST_UNORD *list, size_t i)

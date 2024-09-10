@@ -30,6 +30,8 @@ extern float lineBuffer[4];
 extern LIST_UNORD * E_LIST[2];
 #define LIST_ENEM 0
 #define LIST_PROJ 1
+#define DEF_MAX_PROJLIST_SIZE 1000
+#define DEF_MAX_ENEMYLIST_SIZE 20
 
 //Input handeling
 #define KEY_LOCK_OUT 60
@@ -41,6 +43,8 @@ extern double LAST_SPACE;
 
 
 void userInput(GLFWwindow *window , ENTITY *player);
+
+void updateEnemy();
 
 void updateProj();
 

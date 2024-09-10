@@ -6,7 +6,7 @@ typedef struct unorderList
 {
     size_t size;
     size_t max;
-    void ** elements;
+    void **elements;
 }LIST_UNORD;
 
 
