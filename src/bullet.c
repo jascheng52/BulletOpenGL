@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 
     vec2 *playerVerts = malloc(sizeof(vec2) * 4);
     memcpy(playerVerts,squareEntityCords,8 * sizeof(float));
-    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,70, 45);
+    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,-145, 90);
     glmc_quat_copy(player->pos.rotQuat, player->pos.prevQuat);
     player->hp = 100;
     
@@ -194,21 +194,33 @@ int main(int argc, char *argv[])
             }    
             SHADER_setFloat(squareEntityShader,"xPos",e->pos.prevXPos + interpolation * (e->pos.xPos - e->pos.prevXPos) );
             SHADER_setFloat(squareEntityShader,"yPos",e->pos.prevYPos + interpolation * (e->pos.yPos - e->pos.prevYPos) );
-            // printf("INTER:%f\n", interpolation);
+            
             mat4 rotMat;
             versor q;
             glmc_quat_slerp(e->pos.prevQuat,e->pos.rotQuat,interpolation,q);
             glmc_quat_mat4(q,rotMat);
+            // if(i%49 == 1)
+            // {
+            //     // printf("e: %p, degrees:%f\n", e, e->pos.degree);
+            //     printf("INTER:%f\n", interpolation);
+            //     glmc_versor_print(e->pos.prevQuat,stdout);
+            //     glmc_versor_print(e->pos.rotQuat,stdout);
+            //     glmc_versor_print(q,stdout);
+
+
+            // }
             SHADER_setFloat(squareEntityShader, "scale", e->pos.scale);
             SHADER_setMat4(squareEntityShader, "rotMat",rotMat);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
+            // ENTITY_updateDeg(e,e->pos.degree + 3);
+
         }
 
 
         LIST_UNORD *enemyList = E_LIST[LIST_ENEM];
         for(size_t i = 0; i < enemyList->size; i++)
         {
-            ENTITY *e = enemyList->elements[i];
+            ENTITY *e = enemyList->elements[i]; 
             SHADER_setFloat(squareEntityShader,"windWidth",windWidth);
             SHADER_setFloat(squareEntityShader,"windHeight",windHeight);
             SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){1,0,0});
@@ -246,6 +258,7 @@ int main(int argc, char *argv[])
         SHADER_setFloat(squareEntityShader, "scale", player->pos.scale);
         SHADER_setMat4(squareEntityShader, "rotMat",rotMat);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
+        // ENTITY_updateDeg(player,player->pos.degree + 3);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -305,8 +318,8 @@ void userInput(GLFWwindow *window , ENTITY *player)
         {
             LAST_SPACE = GLOB_GAME_TICK;
             // ATTACKS_singleStraight(player,squareEntityCords,4,player->pos.scale/2,2);
-            ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
-            // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,-180,50,300);
+            // ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
+            ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,180,50,300);
         }
     }
 

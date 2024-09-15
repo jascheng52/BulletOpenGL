@@ -207,7 +207,6 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
 
     vec2 res;
     ENTITY_vertexDirection(e,res, windHeight,windWidth);
-
     float angApart;
     if(amount != 1)
         angApart = widthAngle / (amount-1);
@@ -237,12 +236,12 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
         double sinRes = sin(rads);
         double cosRes = cos(rads);
         // POS_DATA *pos = &proj->pos;
-        proj->pos.xPos = proj->pos.xPos + sinRes * radius;
-        proj->pos.yPos = proj->pos.yPos + cosRes * radius;
+        proj->pos.xPos = proj->pos.xPos + cosRes * radius;
+        proj->pos.yPos = proj->pos.yPos + sinRes * radius;
         // printf("XPos: %f", proj->pos.xPos);
         ENTITY_updateDeg(proj, e->pos.degree);
         proj->pos.prevDeg = proj->pos.degree;
-
+        glmc_quat_copy(proj->pos.rotQuat, proj->pos.prevQuat);
         E_LIST[LIST_PROJ] = LIST_UNORD_add(E_LIST[LIST_PROJ],proj);
         if(E_LIST[LIST_PROJ] == NULL)
         {

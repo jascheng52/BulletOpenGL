@@ -6,7 +6,7 @@
 #include <unorderList.h>
 
 #define DEF_TICK_RATE 120
-#define DEF_MAX_TICK_SKIP 20
+#define DEF_MAX_TICK_SKIP 10
 
 #define WINDOWHEIGHT 900
 #define WINDOWWIDTH 600
