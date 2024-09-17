@@ -3,8 +3,6 @@
 
 #include <cglm/call.h>
 #include <entity.h>
-#include <aiDataStructs.h>
-
 
 //Shoots a single proj from e and inserts proj in elist
 void ATTACKS_singleStraight(ENTITY *e, float *projShape, size_t numVerts, 
@@ -22,7 +20,11 @@ void ATTACKS_radiusShot(ENTITY *e, float *projShape, size_t numVerts,
     float scale, size_t velocity, float widthAngle, size_t amount, float radius);
 
 
-// void ATTACKS_timedRadShot(ENTITY *e, float *projShape, size_t numVerts, 
-//     float scale, size_t velocity, float widthAngle, size_t amount, float radius);
+void ATTACKS_timedRadShot(ENTITY *e, float *projShape, size_t numVerts, 
+    float scale, size_t velocity, float widthAngle, size_t amount, 
+    size_t dispTickTime);
+
+
+
 
 #endif 

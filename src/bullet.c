@@ -7,6 +7,7 @@
 #include <math.h>
 #include <string.h>
 
+#include <bErrors.h>
 #include <bullet.h>
 #include <shader.h>
 #include <entity.h>
@@ -75,11 +76,8 @@ int main(int argc, char *argv[])
 
     E_LIST[LIST_ENEM]= LIST_UNORD_create(DEF_MAX_PROJLIST_SIZE);
     E_LIST[LIST_PROJ]= LIST_UNORD_create(DEF_MAX_ENEMYLIST_SIZE);
-    if(E_LIST[LIST_ENEM] == NULL || E_LIST[LIST_PROJ] == NULL)
-    {
-        fprintf(stderr, "Failed initial list setup \n");
-        exit(EXIT_FAILURE);
-    }
+    bErrorNull(E_LIST[LIST_ENEM], "Failed initial list setup \n");
+    bErrorNull(E_LIST[LIST_PROJ], "Failed initial list setup \n");
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,3);
@@ -87,15 +85,11 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow *window = glfwCreateWindow(windWidth, windHeight, "Bullet Game", NULL, NULL);
-    if(window == NULL)
-    {
-        fprintf(stderr, "Failed To initialize Window");
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
+    bErrorNull(window, "Failed To initialize Window");
+    
     glfwMakeContextCurrent(window);
 
-    if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress) )
+    if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         fprintf(stderr, "Failed to initialize Glad");
         glfwTerminate();
@@ -103,12 +97,14 @@ int main(int argc, char *argv[])
     }
 
     vec2 *playerVerts = malloc(sizeof(vec2) * 4);
+    bErrorNull(playerVerts,"Failed to create player verts");
     memcpy(playerVerts,squareEntityCords,8 * sizeof(float));
     player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,-145, 90);
     glmc_quat_copy(player->pos.rotQuat, player->pos.prevQuat);
     player->hp = 100;
     
     vec2 *otherVerts = malloc(sizeof(vec2) * 4);
+    bErrorNull(otherVerts,"Failed to create other verts");
     memcpy(otherVerts,squareEntityCords,8 * sizeof(float));
     other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 0);
     glmc_quat_copy(other->pos.rotQuat, other->pos.prevQuat);
@@ -116,11 +112,8 @@ int main(int argc, char *argv[])
     other->hp = 100000;
 
     E_LIST[LIST_ENEM] = LIST_UNORD_add(E_LIST[LIST_ENEM], other);
-    if(E_LIST[LIST_ENEM] == NULL)
-    {
-        fprintf(stderr, "Error adding to enemy list\n");
-        exit(EXIT_FAILURE);
-    }
+    bErrorNull(E_LIST[LIST_ENEM],"Error adding to enemy list\n");
+
     unsigned int sqrEntityVAO, sqrEntityVBO,sqrEntityEBO;
     glGenVertexArrays(1,&sqrEntityVAO);
     glGenBuffers(1, &sqrEntityVBO);
@@ -147,16 +140,15 @@ int main(int argc, char *argv[])
 
     
     SHADER *squareEntityShader = SHADER_build("./shaders/squareEntity.vert", "./shaders/squareEntity.frag");
-    if(squareEntityShader == NULL)
-        exit(EXIT_FAILURE);
+    bErrorNull(squareEntityShader,"Error building square shader\n");
 
     SHADER *lineShader = SHADER_build("./shaders/line.vert", "./shaders/line.frag");
-    if(lineShader == NULL)
-        exit(EXIT_FAILURE);
+    bErrorNull(lineShader,"Error building line shader\n");
 
     const float MAX_FPS = DEF_TICK_RATE; 
     const float SKIP_TICK = 1000/MAX_FPS/1000;
     double nextTick = glfwGetTime();
+    
     while(!glfwWindowShouldClose(window))
     {
         lastTime = glfwGetTime();
@@ -319,7 +311,9 @@ void userInput(GLFWwindow *window , ENTITY *player)
             LAST_SPACE = GLOB_GAME_TICK;
             // ATTACKS_singleStraight(player,squareEntityCords,4,player->pos.scale/2,2);
             // ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
-            ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,180,50,300);
+            // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,180,50,300);
+            ATTACKS_timedRadShot(player,squareEntityCords,4, player->pos.scale/4,1,180,50,240);
+
         }
     }
 
@@ -340,12 +334,13 @@ void updateProj()
             ENTITY_delete(delE);
             continue;
         }
-        e->pos.prevXPos = e->pos.xPos;
-        e->pos.prevYPos = e->pos.yPos;
-        // if(e->type == TYPE_PLAY_MAIN || e->type == TYPE_ENEMY) 
-        //     continue;
-        e->pos.xPos = e->pos.velocity * e->pos.direction[0] + e->pos.xPos;        
-        e->pos.yPos = e->pos.velocity * e->pos.direction[1] + e->pos.yPos;
+        e->ai->action(e);
+        // e->pos.prevXPos = e->pos.xPos;
+        // e->pos.prevYPos = e->pos.yPos;
+        // // if(e->type == TYPE_PLAY_MAIN || e->type == TYPE_ENEMY) 
+        // //     continue;
+        // e->pos.xPos = e->pos.velocity * e->pos.direction[0] + e->pos.xPos;        
+        // e->pos.yPos = e->pos.velocity * e->pos.direction[1] + e->pos.yPos;
     }
 }
 

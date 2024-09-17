@@ -1,8 +1,9 @@
 #ifndef __entity_h__
 #define __entity_h__
 
+
 #include <cglm/call.h>
-#include <aiDataStructs.h>
+#include <aiActions.h>
 
 typedef enum en_type
 {
@@ -17,6 +18,7 @@ typedef enum en_group
     ALLY,
     OPPONENT
 }EN_GROUP;
+
 
 //Stores positional information for an entity
 typedef struct pos_data
@@ -35,6 +37,9 @@ typedef struct pos_data
     float velocity;
     float scale;
 }POS_DATA;
+
+struct ai_data;
+typedef struct ai_data AI_DATA;
 //deg should be updated via update deg
 //deg from right x axis dir
 typedef struct entity
@@ -45,8 +50,7 @@ typedef struct entity
     int hp;
     size_t timeAlive; 
     size_t timeLeft;
-    void (*aiAction)(struct entity *,size_t);
-    AI_DATA *aiData;
+    AI_DATA *ai;
 }ENTITY;
 
 
