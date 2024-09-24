@@ -41,5 +41,32 @@ void AI_moveTimeRad(ENTITY *e)
     e->pos.yPos = e->pos.velocity*1 * e->pos.direction[1] + e->pos.yPos;
 
 }
-
 void (*AI_move_timeRad)(ENTITY *) = &AI_moveTimeRad;
+
+void AI_moveHelix(ENTITY *e)
+{
+    bErrorNull(e, "Attempted moveHelix on null entity\n");
+    int *period = (int *)(e->ai->args);
+    int curTime = *(int *)(e->ai->args + sizeof(int));
+    float sign = *(float *)(e->ai->args + sizeof(int) * 2);
+    if(curTime == 0)
+    {
+        curTime = *period;
+        memcpy(e->ai->args + sizeof(int), &curTime, sizeof(int));
+        sign = -sign;
+        memcpy(e->ai->args + sizeof(int) * 2, &sign, sizeof(float));
+         
+    }
+
+    ENTITY_updateDeg(e, e->pos.degree + sign);
+    e->pos.prevXPos = e->pos.xPos;
+    e->pos.prevYPos = e->pos.yPos;
+    e->pos.xPos = e->pos.velocity*1 * e->pos.direction[0] + e->pos.xPos;        
+    e->pos.yPos = e->pos.velocity*1 * e->pos.direction[1] + e->pos.yPos;
+    curTime--;
+    // printf("%f\n", sign);
+    memcpy(e->ai->args + sizeof(int), &curTime, sizeof(int));
+
+}
+
+void(*AI_move_helix)(ENTITY *) = &AI_moveHelix;

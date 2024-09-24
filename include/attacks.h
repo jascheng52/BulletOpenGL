@@ -24,7 +24,8 @@ void ATTACKS_timedRadShot(ENTITY *e, float *projShape, size_t numVerts,
     float scale, size_t velocity, float widthAngle, size_t amount, 
     size_t dispTickTime);
 
-
+void ATTACKS_helixShot(ENTITY *e, float *projShape, size_t numVerts, 
+    float scale, size_t velocity, size_t period, float degDelta);
 
 
 #endif 

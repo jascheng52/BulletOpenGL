@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <bErrors.h>
 #include <entity.h>
 #include <bullet.h>
 #include <unorderList.h>
@@ -15,38 +17,35 @@ float EPSILON = 0.001;
 ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert, 
     float scale, float x,float y,float deg)
 {
-    ENTITY *entity = malloc(sizeof(*entity));
-    if(entity == NULL)
-    {
-        fprintf(stderr, "Out of memory creating entity\n");
-        return NULL;
-    }
+    ENTITY *e = malloc(sizeof(*e));
+    bErrorNull(e, "Out of memory creating entity\n");
 
     switch(type)
     {
         case TYPE_PLAY_MAIN:
-            entity->group = ALLY;
+            e->group = ALLY;
             break;
         case TYPE_ENEMY:
-            entity->group = OPPONENT;
+            e->group = OPPONENT;
             break;
         case TYPE_PLAY_PROJ:
-            entity->group = ALLY;
+            e->group = ALLY;
             break;  
         case TYPE_ENEMY_PROJ:
-            entity->group = OPPONENT;
+            e->group = OPPONENT;
             break;
         default:
             fprintf(stderr, "Invalid Entity Type\n");
             return NULL;
     }
+    
     if(vertices == NULL)
     {
         fprintf(stderr, "Missing vertices arguments\n");
         return NULL;
     }
-    POS_DATA *pos = &entity->pos;
-    entity->type = type;
+    POS_DATA *pos = &e->pos;
+    e->type = type;
     pos->sizeVertices = lenVert;
     pos->vertices = vertices;
     pos->degree = deg;
@@ -81,33 +80,30 @@ ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     }
 
     pos->velocity = 0;
-    entity->hp = 0;
-    entity->timeAlive = 0;
-    entity->timeLeft = 0;
-    entity->aiAction = NULL;
-    return entity;
+    e->hp = 0;
+    e->timeAlive = GLOB_GAME_TICK;
+    e->timeLeft = 0;
+    e->ai = NULL;
+    return e;
 }
 
 //Frees the entity vertices, and itself
-void ENTITY_delete(ENTITY *entity)
+void ENTITY_delete(ENTITY *e)
 {
-    if(entity == NULL)
-    {
-        fprintf(stderr, "Attempted to free null entity\n");
-        exit(EXIT_FAILURE);
-    }
+    bErrorNull(e,"Attempted to free null entity\n" );
 
-    free(entity->pos.vertices);
-    free(entity);
+    if(e->ai != NULL)
+        free(e->ai);
+    
+    free(e->pos.vertices);
+    free(e);
 }
 
 int ENTITY_collide(ENTITY *e1, ENTITY *e2)
 {
-    if(e1 == NULL || e2 == NULL)
-    {
-        fprintf(stderr, "Attempted to collide check null(s) entites at %p and %p\n",e1,e2);
-        exit(EXIT_FAILURE);
-    }
+    bErrorNull(e1, "Attempted to collide check null e1 entites at %p",e1);
+    bErrorNull(e2, "Attempted to collide check null e2 entites at %p",e2);
+    
     POS_DATA *e1Pos = &e1->pos;
     for(size_t i = 0; i < e1Pos->sizeVertices; i++)
     {
@@ -213,12 +209,8 @@ int ENTITY_vertexDirection(ENTITY *e, vec2 res, float windHeight, float windWidt
 
 void ENTITY_updateDeg(ENTITY *e, float deg)
 {
+    bErrorNull(e,"Attempted to update deg null entry deg\n");
     POS_DATA *pos = &e->pos;
-    if(e == NULL)
-    {
-        fprintf(stderr, "Attempted to update deg null entry deg\n");
-        exit(EXIT_FAILURE);
-    }
     
     pos->prevDeg = pos->degree;
     pos->degree = deg;
@@ -237,12 +229,9 @@ void ENTITY_updateDeg(ENTITY *e, float deg)
 
 void ENTITY_printLoc(ENTITY * e)
 {
+    bErrorNull(e, "Attempted to print null Entity\n");
     POS_DATA *pos = &e->pos;
-    if(e == NULL)
-    {
-        fprintf(stderr,"Attempted to print null Entity\n");
-        exit(EXIT_FAILURE);
-    }
+    
     for(size_t i = 0; i < pos->sizeVertices; i++)
     {
         vec3 qLoc;
@@ -261,11 +250,8 @@ void ENTITY_printLoc(ENTITY * e)
 void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des)
 {
 
-    if(e == NULL)
-    {
-        fprintf(stderr, "Attempted to calculate world cords on null entity\n");
-    }
-    
+    bErrorNull(e, "Attempted to calculate world cords on null entity\n");
+
     POS_DATA *pos = &e->pos;
     glm_vec2_add(v,(vec2){pos->xPos,pos->yPos}, des);
 }

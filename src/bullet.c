@@ -149,10 +149,11 @@ int main(int argc, char *argv[])
     const float SKIP_TICK = 1000/MAX_FPS/1000;
     double nextTick = glfwGetTime();
     
+    size_t frameCount = 0;
+    size_t lastFrameCount = 0;
     while(!glfwWindowShouldClose(window))
     {
         lastTime = glfwGetTime();
-
         glClearColor(1,1,1,1.0);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -166,6 +167,9 @@ int main(int argc, char *argv[])
             nextTick = nextTick + SKIP_TICK;
             GLOB_GAME_TICK++;
             loop++;
+
+            // printf("%lld\n", frameCount - lastFrameCount);
+            lastFrameCount = frameCount;
         }
         
         float interpolation = (nextTick - lastTime) / SKIP_TICK;
@@ -254,6 +258,7 @@ int main(int argc, char *argv[])
 
         glfwPollEvents();
         glfwSwapBuffers(window);
+        frameCount++;
     }
     return 0;
 }
@@ -312,7 +317,9 @@ void userInput(GLFWwindow *window , ENTITY *player)
             // ATTACKS_singleStraight(player,squareEntityCords,4,player->pos.scale/2,2);
             // ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
             // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,180,50,300);
-            ATTACKS_timedRadShot(player,squareEntityCords,4, player->pos.scale/4,1,180,50,240);
+            // ATTACKS_timedRadShot(player,squareEntityCords,4, player->pos.scale/4,1,360,50,240);
+            ATTACKS_helixShot(player,squareEntityCords,4, player->pos.scale/4,1,120,1.0);
+            ATTACKS_helixShot(player,squareEntityCords,4, player->pos.scale/4,1,120,-1.0);
 
         }
     }

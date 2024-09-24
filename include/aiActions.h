@@ -5,8 +5,9 @@
 /*Types of ai*/
 typedef enum ai_type
 {
-    AI_MOVE_FOR,
-    AI_TIME_RAD
+    AI_MOVE_FOR,//(No args)
+    AI_TIME_RAD, //(size_t disperseTick,float finalDeg)
+    AI_HELIX // (size_t period, size_t curPeriod, float degDelta)
 }AI_TYPE;
 
 struct entity;
@@ -31,5 +32,8 @@ void AI_moveForward(ENTITY *e);
 
 extern void (*AI_move_timeRad)(ENTITY *);
 void AI_moveTimeRad(ENTITY *e);
+
+extern void (*AI_move_helix)(ENTITY *);
+void AI_moveHelix(ENTITY *e);
 
 #endif

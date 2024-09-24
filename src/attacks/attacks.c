@@ -284,12 +284,12 @@ void ATTACKS_timedRadShot(ENTITY *e, float *projShape, size_t numVerts,
 
         proj->pos.velocity = velocity;
         // POS_DATA *pos = &proj->pos;
-        proj->pos.xPos = proj->pos.xPos;
-        proj->pos.yPos = proj->pos.yPos;
+        proj->pos.prevXPos = proj->pos.xPos;
+        proj->pos.prevYPos = proj->pos.yPos;
         // printf("XPos: %f", proj->pos.xPos);
         glmc_quat_copy(proj->pos.rotQuat, proj->pos.prevQuat);
 
-        AI_DATA *ai = calloc(1,sizeof(*ai) + sizeof(float) * 3);
+        AI_DATA *ai = calloc(1,sizeof(*ai) + sizeof(size_t) + sizeof(float));
         bErrorNull(ai, "Out of memory creating ai\n");
         
         ai->argSize = sizeof(size_t) + sizeof(float);
@@ -304,5 +304,69 @@ void ATTACKS_timedRadShot(ENTITY *e, float *projShape, size_t numVerts,
         
         currDegree = currDegree + angApart;
     }
+    
+}
+
+void ATTACKS_helixShot(ENTITY *e, float *projShape, size_t numVerts, 
+    float scale, size_t velocity, size_t period, float degDelta)
+{
+    bErrorNull(e,"Passed Null Entity Attack_radius\n");
+    bErrorNull(projShape,"Passed Null projectile shape Attack_radius\n");
+
+    EN_TYPE projType;
+    switch (e->type)
+    {
+        case TYPE_PLAY_MAIN:
+            projType = TYPE_PLAY_PROJ;
+            break;
+        case TYPE_ENEMY:
+            projType = TYPE_ENEMY_PROJ;
+            break;
+        case TYPE_PLAY_PROJ:
+            projType = TYPE_PLAY_PROJ;
+            break;
+        case TYPE_ENEMY_PROJ:
+            projType = TYPE_ENEMY_PROJ;
+            break;
+        default:
+            fprintf(stderr,"Enitity missing type in Attacks_radius_time\n");
+            exit(EXIT_FAILURE);
+            break;
+    }
+    
+
+    vec2 res;
+    ENTITY_vertexDirection(e,res,windHeight,windWidth);
+    size_t initPeriod = period / 2;
+    float currDegree = e->pos.degree;
+    
+    vec2 *verts = malloc(sizeof(vec2) * numVerts);
+    bErrorNull(verts, "Out of Memory creating verts\n");
+
+    memcpy(verts, projShape, sizeof(vec2) * numVerts);
+    ENTITY *proj = ENTITY_create(projType,verts, numVerts, scale,
+    res[0],res[1],currDegree);
+    bErrorNull(proj, "Out of Memory creating proj\n");
+
+    proj->pos.velocity = velocity;
+    proj->pos.prevXPos = proj->pos.xPos;
+    proj->pos.prevYPos = proj->pos.yPos;
+    glmc_quat_copy(proj->pos.rotQuat, proj->pos.prevQuat);
+
+    AI_DATA *ai = calloc(1,sizeof(*ai) + sizeof(int)* 2+ sizeof(float));
+    bErrorNull(ai, "Out of memory creating ai\n");
+    
+    ai->argSize = sizeof(int) * 2 + sizeof(float);
+    memcpy(ai->args,&period,sizeof(int));
+    memcpy(ai->args + sizeof(int),&initPeriod ,sizeof(int));
+    memcpy(ai->args + sizeof(int)*2,&degDelta ,sizeof(float));
+
+    ai->aiType = AI_HELIX;
+    ai->action = AI_move_helix;
+    proj->ai = ai;
+
+    printf("%f\n",degDelta);
+    E_LIST[LIST_PROJ] = LIST_UNORD_add(E_LIST[LIST_PROJ],proj);
+    bErrorNull(E_LIST[LIST_PROJ], "Failed to add straight proj to list radius spread\n");
     
 }
