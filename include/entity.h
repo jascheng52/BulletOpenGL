@@ -7,6 +7,7 @@
 
 typedef enum en_type
 {
+    TYPE_NA,
     TYPE_PLAY_MAIN,
     TYPE_PLAY_PROJ,
     TYPE_ENEMY,

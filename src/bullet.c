@@ -318,8 +318,9 @@ void userInput(GLFWwindow *window , ENTITY *player)
             // ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
             // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,180,50,300);
             // ATTACKS_timedRadShot(player,squareEntityCords,4, player->pos.scale/4,1,360,50,240);
-            ATTACKS_helixShot(player,squareEntityCords,4, player->pos.scale/4,1,120,1.0);
-            ATTACKS_helixShot(player,squareEntityCords,4, player->pos.scale/4,1,120,-1.0);
+            // ATTACKS_helixShot(player,squareEntityCords,4, player->pos.scale/4,1,120,1);
+            // ATTACKS_helixShot(player,squareEntityCords,4, player->pos.scale/4,1,120,-1.0);
+            ATTACKS_spiralShot(player,squareEntityCords,4, player->pos.scale/4,1,2,1);
 
         }
     }
@@ -334,13 +335,13 @@ void updateProj()
     for (size_t i = 0; i < list->size ; i++)
     {
         ENTITY *e = list->elements[i];
-        if(ENTITY_collide(e,other))
-        {
-            ENTITY *delE = LIST_UNORD_del(list,i);
-            i--;
-            ENTITY_delete(delE);
-            continue;
-        }
+        // if(ENTITY_collide(e,other))
+        // {
+        //     ENTITY *delE = LIST_UNORD_del(list,i);
+        //     i--;
+        //     ENTITY_delete(delE);
+        //     continue;
+        // }
         e->ai->action(e);
         // e->pos.prevXPos = e->pos.xPos;
         // e->pos.prevYPos = e->pos.yPos;
