@@ -24,6 +24,8 @@ void SHADER_delete(SHADER *shader);
 
 void SHADER_setVec3(SHADER *shader, char *name, vec3 val);
 void SHADER_setMat2(SHADER *shader, char* name, mat2 mat);
+void SHADER_setMat4(SHADER *shader, char* name, mat4 mat);
+
 
 
 

@@ -211,6 +211,15 @@ void SHADER_setMat2(SHADER *shader, char* name, mat2 mat)
     }
     glUniformMatrix2fv(glGetUniformLocation(shader->ID, name), 1, GL_FALSE, (float *)mat);
 }
+void SHADER_setMat4(SHADER *shader, char* name, mat4 mat)
+{
+    if(shader == NULL || name == NULL)
+    {
+        fprintf(stderr, "Failed to pass param\n");
+        exit(EXIT_FAILURE);
+    }
+    glUniformMatrix4fv(glGetUniformLocation(shader->ID, name), 1, GL_FALSE, (float *)mat);
+}
 
 void SHADER_use(SHADER *shader)
 {

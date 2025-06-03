@@ -1,11 +1,13 @@
 #ifndef __entity_h__
 #define __entity_h__
 
-#include <cglm/call.h>
 
+#include <cglm/call.h>
+#include <aiActions.h>
 
 typedef enum en_type
 {
+    TYPE_NA,
     TYPE_PLAY_MAIN,
     TYPE_PLAY_PROJ,
     TYPE_ENEMY,
@@ -18,13 +20,15 @@ typedef enum en_group
     OPPONENT
 }EN_GROUP;
 
+
 //Stores positional information for an entity
 typedef struct pos_data
 {
     size_t sizeVertices;
     vec2 *vertices;
     vec2 direction;
-    mat2 rotMat;
+    versor rotQuat;
+    versor prevQuat;
     float degree;
     float prevDeg;
     float xPos;
@@ -34,7 +38,11 @@ typedef struct pos_data
     float velocity;
     float scale;
 }POS_DATA;
+
+struct ai_data;
+typedef struct ai_data AI_DATA;
 //deg should be updated via update deg
+//deg from right x axis dir
 typedef struct entity
 {
     EN_TYPE type;
@@ -43,24 +51,20 @@ typedef struct entity
     int hp;
     size_t timeAlive; 
     size_t timeLeft;
-    void (*eFunct)(struct entity *,size_t);
+    AI_DATA *ai;
 }ENTITY;
 
 
 
 
-#define DEF_MAX_ENTITY 1000
-extern size_t ENTITY_maxSize;
-extern size_t eListSize;
-extern ENTITY **eList ;
-
 //Creates an entity
 //Assumes the vertices are already allocated
-//Assume coordinates are given in Counter Clockwise
+//Assume coordinates are given in Counter Clockwise 
 //Takes ownership in releasing vertices memory using delete
 //scale is mult by shader vertices
 //xy is 2d position, xy direction expected to be normailized
 //deg is degrees offset from 0,1 vector counter clockwise
+//previous fields(prev quat) must be initialized
 ENTITY *ENTITY_create(EN_TYPE type, vec2 *vertices, size_t lenVert,
     float scale, float x,float y, float deg);
 
@@ -76,27 +80,10 @@ int ENTITY_collide(ENTITY *e1, ENTITY *e2);
 // Returns fail/success
 int ENTITY_vertexDirection(ENTITY *e, vec2 res, float windHeight, float windWidth);
 
-//Initializes array for entities of max_size into eList
-//Only one elist at time to avoid corruption
-//Caller frees elist
-void ENTITY_eListInit(size_t max_size);
-
-//Adds *entity to end of elist. Resizes list by DEF_MAX * 2
-void ENTITY_eListAdd(ENTITY *e);
-
-//Deletes *entity at index. Swaps last entry to index
-void ENTITY_eListDelete(size_t index);
-
-//Frees the elist, frees all elist entries
-void ENTITY_eListFree();
-
 //Updates the degrees,direction vector, and rotational matrix
+//Sets the previous degree
 void ENTITY_updateDeg(ENTITY *e, float deg);
 
-//Handles actions to be done at every game tick
-//including timeAlive, Should be done via update loop
-//Returns true if entity is deleted
-int ENTITY_tickUpdate(ENTITY *e, size_t index);
 
 //Calculate window cords of v based on e and store in des
 void ENTITY_worldCords(ENTITY *e, vec2 v, vec2 des);
@@ -115,16 +102,5 @@ int onRight(vec2 a1, vec2 a2, vec2 b);
 
 //Checks if point b is on of line a
 int collinear(vec2 a1, vec2 a2, vec2 b);
-
-//Gen rotational matrix
-//to rotate rot to target direction and stores in des
-//Mult des and rot to get target
-//implemented: https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
-void gen_rot_mat(vec2 rot, vec2 target, mat2 des);
-
-//Generate rotational matrix at des with angle
-//respect to DEF_UP_DIR, clockwise
-void gen_rot_mat_up(float deg, mat2 des);
-
 
 #endif

@@ -8,7 +8,7 @@ out vec4 PlayerColor;
 
 uniform float xPos;
 uniform float yPos;
-uniform mat2 rotMat;
+uniform mat4 rotMat;
 uniform float scale;
 
 
@@ -20,8 +20,8 @@ void main()
 {
     float halfH = windHeight/2;
     float halfW = windWidth/2;
-    vec2 scaledPos = rotMat * initPos;
-    scaledPos = scaledPos * vec2(scale,scale);
+    vec4 scaledPos = rotMat * vec4(initPos.x,initPos.y,0,1);
+    scaledPos = scaledPos * vec4(scale,scale,0,0);
     gl_Position = vec4((scaledPos.x + xPos)/halfW, (scaledPos.y + yPos)/halfH, 0 ,1);
     
 PlayerColor = vec4(rgbColor, 1.0);

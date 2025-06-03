@@ -7,6 +7,7 @@
 #include <math.h>
 #include <string.h>
 
+#include <bErrors.h>
 #include <bullet.h>
 #include <shader.h>
 #include <entity.h>
@@ -67,9 +68,16 @@ vec2 prevPost = {0,0};
 double lastTime = 0;
 size_t GLOB_GAME_TICK = 0;
 ENTITY *player;
+ENTITY *other;
+LIST_UNORD *E_LIST[2];
 
 int main(int argc, char *argv[])
 {
+
+    E_LIST[LIST_ENEM]= LIST_UNORD_create(DEF_MAX_PROJLIST_SIZE);
+    E_LIST[LIST_PROJ]= LIST_UNORD_create(DEF_MAX_ENEMYLIST_SIZE);
+    bErrorNull(E_LIST[LIST_ENEM], "Failed initial list setup \n");
+    bErrorNull(E_LIST[LIST_PROJ], "Failed initial list setup \n");
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,3);
@@ -77,15 +85,11 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow *window = glfwCreateWindow(windWidth, windHeight, "Bullet Game", NULL, NULL);
-    if(window == NULL)
-    {
-        fprintf(stderr, "Failed To initialize Window");
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
+    bErrorNull(window, "Failed To initialize Window");
+    
     glfwMakeContextCurrent(window);
 
-    if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress) )
+    if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         fprintf(stderr, "Failed to initialize Glad");
         glfwTerminate();
@@ -93,18 +97,22 @@ int main(int argc, char *argv[])
     }
 
     vec2 *playerVerts = malloc(sizeof(vec2) * 4);
+    bErrorNull(playerVerts,"Failed to create player verts");
     memcpy(playerVerts,squareEntityCords,8 * sizeof(float));
-    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,0, 0);
+    player = ENTITY_create(TYPE_PLAY_MAIN, playerVerts, 4, 30,0,-145, 90);
+    glmc_quat_copy(player->pos.rotQuat, player->pos.prevQuat);
     player->hp = 100;
     
     vec2 *otherVerts = malloc(sizeof(vec2) * 4);
+    bErrorNull(otherVerts,"Failed to create other verts");
     memcpy(otherVerts,squareEntityCords,8 * sizeof(float));
-    ENTITY *other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 0);
-    other->hp = 1000;
+    other = ENTITY_create(TYPE_ENEMY, otherVerts, 4, 50, 0,150, 0);
+    glmc_quat_copy(other->pos.rotQuat, other->pos.prevQuat);
 
-    ENTITY_eListInit(DEF_MAX_ENTITY);
-    ENTITY_eListAdd(player);
-    ENTITY_eListAdd(other);
+    other->hp = 100000;
+
+    E_LIST[LIST_ENEM] = LIST_UNORD_add(E_LIST[LIST_ENEM], other);
+    bErrorNull(E_LIST[LIST_ENEM],"Error adding to enemy list\n");
 
     unsigned int sqrEntityVAO, sqrEntityVBO,sqrEntityEBO;
     glGenVertexArrays(1,&sqrEntityVAO);
@@ -132,106 +140,125 @@ int main(int argc, char *argv[])
 
     
     SHADER *squareEntityShader = SHADER_build("./shaders/squareEntity.vert", "./shaders/squareEntity.frag");
-    if(squareEntityShader == NULL)
-        exit(EXIT_FAILURE);
+    bErrorNull(squareEntityShader,"Error building square shader\n");
 
     SHADER *lineShader = SHADER_build("./shaders/line.vert", "./shaders/line.frag");
-    if(lineShader == NULL)
-        exit(EXIT_FAILURE);
+    bErrorNull(lineShader,"Error building line shader\n");
 
-    const float MAX_FPS = DEF_TICK_RATE;
+    const float MAX_FPS = DEF_TICK_RATE; 
     const float SKIP_TICK = 1000/MAX_FPS/1000;
     double nextTick = glfwGetTime();
+    
+    size_t frameCount = 0;
+    size_t lastFrameCount = 0;
     while(!glfwWindowShouldClose(window))
     {
         lastTime = glfwGetTime();
-
         glClearColor(1,1,1,1.0);
         glClear(GL_COLOR_BUFFER_BIT);
 
         int loop = 0;
-        // printf("Current tick %lf\n", lastTime);
         while(lastTime > nextTick && loop < DEF_MAX_TICK_SKIP)
         {
-            // printf("Polling user input");
             userInput(window,player);
-            // ENTITY_updateDeg(player,player->pos.degree + 5);
+            updateEnemy();
+            // ENTITY_updateDeg(player,player->pos.degree);
             updateProj();
             nextTick = nextTick + SKIP_TICK;
-            // printf("Next tick at :%lf\n", nextTick);
             GLOB_GAME_TICK++;
             loop++;
+
+            // printf("%lld\n", frameCount - lastFrameCount);
+            lastFrameCount = frameCount;
         }
         
         float interpolation = (nextTick - lastTime) / SKIP_TICK;
-        // printf("Next Tick diff: %f\n", (nextTick - lastTime));
-        // printf("SKIP_TICK: %f\n", SKIP_TICK);
         glBindVertexArray(sqrEntityVAO);
         SHADER_use(squareEntityShader);
 
-        for(size_t i = 0; i < eListSize; i++)
+        LIST_UNORD *projList = E_LIST[LIST_PROJ];
+        for(size_t i = 0; i < E_LIST[LIST_PROJ]->size; i++)
         {
+            ENTITY *e = projList->elements[i];
             SHADER_setFloat(squareEntityShader,"windWidth",windWidth);
             SHADER_setFloat(squareEntityShader,"windHeight",windHeight);
-            SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){1,0,0});    
-            switch (eList[i]->type)
+            SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){1,0,0});
+            if(e->type != TYPE_PLAY_PROJ && e->type != TYPE_ENEMY_PROJ)
             {
-                case TYPE_PLAY_MAIN:
-                    break;
-                case TYPE_PLAY_PROJ:
-                    break;
-                case TYPE_ENEMY:
-                    if(eList[i]->hp == 0)
-                    {
-                        ENTITY_eListDelete(i);
-                        // other = NULL;
-                        i--;
-                        continue;
-                    }
-                    break;
-                default:
-                    break;
-            }
+                fprintf(stderr,"Critical Error. Non-proj in entity list\n");
+                exit(EXIT_FAILURE);
+            }    
+            SHADER_setFloat(squareEntityShader,"xPos",e->pos.prevXPos + interpolation * (e->pos.xPos - e->pos.prevXPos) );
+            SHADER_setFloat(squareEntityShader,"yPos",e->pos.prevYPos + interpolation * (e->pos.yPos - e->pos.prevYPos) );
             
-            SHADER_setFloat(squareEntityShader,"xPos",eList[i]->pos.prevXPos + interpolation * (eList[i]->pos.xPos - eList[i]->pos.prevXPos) );
-            SHADER_setFloat(squareEntityShader,"yPos",eList[i]->pos.prevYPos + interpolation * (eList[i]->pos.yPos - eList[i]->pos.prevYPos) );
-            // printf("INTER:%f\n", interpolation);
-            if(eList[i]->type == TYPE_PLAY_PROJ)
-            {
-                printf("INTER DEG: %f\n", eList[i]->pos.prevDeg);
-            }
-            float interDeg = eList[i]->pos.prevDeg + interpolation * (eList[i]->pos.degree - eList[i]->pos.prevDeg);
-            // if(i != 0 && i != 1)
+            mat4 rotMat;
+            versor q;
+            glmc_quat_slerp(e->pos.prevQuat,e->pos.rotQuat,interpolation,q);
+            glmc_quat_mat4(q,rotMat);
+            // if(i%49 == 1)
             // {
-            //     printf("prev: %f\n", eList[i]->pos.prevDeg);
-            //     printf("curr: %f\n", eList[i]->pos.degree );
-            //     printf("interpolation: %f\n", interpolation );
-            //     printf("interDeg: %f\n", interDeg);
+            //     // printf("e: %p, degrees:%f\n", e, e->pos.degree);
+            //     printf("INTER:%f\n", interpolation);
+            //     glmc_versor_print(e->pos.prevQuat,stdout);
+            //     glmc_versor_print(e->pos.rotQuat,stdout);
+            //     glmc_versor_print(q,stdout);
+
+
             // }
-            mat2 rotMat;
-            gen_rot_mat_up(interDeg,rotMat);
-            
-            SHADER_setFloat(squareEntityShader, "scale", eList[i]->pos.scale);
-            SHADER_setMat2(squareEntityShader, "rotMat",rotMat);
+            SHADER_setFloat(squareEntityShader, "scale", e->pos.scale);
+            SHADER_setMat4(squareEntityShader, "rotMat",rotMat);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
+            // ENTITY_updateDeg(e,e->pos.degree + 3);
+
+        }
+
+
+        LIST_UNORD *enemyList = E_LIST[LIST_ENEM];
+        for(size_t i = 0; i < enemyList->size; i++)
+        {
+            ENTITY *e = enemyList->elements[i]; 
+            SHADER_setFloat(squareEntityShader,"windWidth",windWidth);
+            SHADER_setFloat(squareEntityShader,"windHeight",windHeight);
+            SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){1,0,0});
+            if(e->type != TYPE_ENEMY)
+            {
+                fprintf(stderr,"Critical Error. Non-enemy in entity list\n");
+                exit(EXIT_FAILURE);
+            }    
+            SHADER_setFloat(squareEntityShader,"xPos",e->pos.prevXPos + interpolation * (e->pos.xPos - e->pos.prevXPos) );
+            SHADER_setFloat(squareEntityShader,"yPos",e->pos.prevYPos + interpolation * (e->pos.yPos - e->pos.prevYPos) );
+            // printf("INTER:%f\n", interpolation);
+            mat4 rotMat;
+            versor q;
+            glmc_quat_slerp(e->pos.prevQuat,e->pos.rotQuat,interpolation,q);
+            glmc_quat_mat4(q,rotMat);
+            SHADER_setFloat(squareEntityShader, "scale", e->pos.scale);
+            SHADER_setMat4(squareEntityShader, "rotMat",rotMat);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
         }
-  
+        SHADER_setFloat(squareEntityShader,"windWidth",windWidth);
+        SHADER_setFloat(squareEntityShader,"windHeight",windHeight);
+        SHADER_setVec3(squareEntityShader,"rgbColor",(vec3){1,0,0});
+        if(player->type != TYPE_PLAY_MAIN)
+        {
+            fprintf(stderr,"Critical Error. Not a player\n");
+            exit(EXIT_FAILURE);
+        }    
+        SHADER_setFloat(squareEntityShader,"xPos",player->pos.prevXPos + interpolation * (player->pos.xPos - player->pos.prevXPos) );
+        SHADER_setFloat(squareEntityShader,"yPos",player->pos.prevYPos + interpolation * (player->pos.yPos - player->pos.prevYPos) );
+        // printf("INTER:%f\n", interpolation);
+        mat4 rotMat;
+        versor q;
+        glmc_quat_slerp(player->pos.prevQuat,player->pos.rotQuat,interpolation,q);
+        glmc_quat_mat4(q,rotMat);
+        SHADER_setFloat(squareEntityShader, "scale", player->pos.scale);
+        SHADER_setMat4(squareEntityShader, "rotMat",rotMat);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT,0);
+        // ENTITY_updateDeg(player,player->pos.degree + 3);
 
-        // SHADER_use(lineShader);
-        // glBindVertexArray(lineVAO);
-        // SHADER_setFloat(lineShader,"windWidth",windWidth);
-        // SHADER_setFloat(lineShader,"windHeight",windHeight);
-        // SHADER_setFloat(lineShader,"xOffSet",player->pos.xPos);
-        // SHADER_setFloat(lineShader,"yOffSet",player->pos.yPos );
-        
-        // // glm_vec2_print(player->direction,stdout);
-        // SHADER_setVec3(lineShader,"rgbColor",(vec3){0,0,1});
-        // SHADER_setMat2(lineShader,"rotMatrix",player->pos.rotMat);
-        // glDrawArrays(GL_LINES, 0,2);
-
-        // printf("%lf\n", player->degree);
         glfwPollEvents();
         glfwSwapBuffers(window);
+        frameCount++;
     }
     return 0;
 }
@@ -288,8 +315,13 @@ void userInput(GLFWwindow *window , ENTITY *player)
         {
             LAST_SPACE = GLOB_GAME_TICK;
             // ATTACKS_singleStraight(player,squareEntityCords,4,player->pos.scale/2,2);
-            ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
-            // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,5,180,1,200);
+            // ATTACKS_spreadShot(player,squareEntityCords,4, player->pos.scale/4,1,120,30);
+            // ATTACKS_radiusShot(player,squareEntityCords,4, player->pos.scale/4,1,180,50,300);
+            // ATTACKS_timedRadShot(player,squareEntityCords,4, player->pos.scale/4,1,360,50,240);
+            // ATTACKS_helixShot(player,squareEntityCords,4, player->pos.scale/4,1,120,1);
+            // ATTACKS_helixShot(player,squareEntityCords,4, player->pos.scale/4,1,120,-1.0);
+            ATTACKS_spiralShot(player,squareEntityCords,4, player->pos.scale/4,1,2,1);
+
         }
     }
 
@@ -299,18 +331,39 @@ void userInput(GLFWwindow *window , ENTITY *player)
 void updateProj()
 {
     // int rn = rand();
-    for (size_t i = 0; i < eListSize; i++)
+    LIST_UNORD *list = E_LIST[LIST_PROJ];
+    for (size_t i = 0; i < list->size ; i++)
     {
-        ENTITY *e = eList[i];
-
-        e->pos.prevXPos = e->pos.xPos;
-        e->pos.prevYPos = e->pos.yPos;
-        // if(e->type == TYPE_PLAY_MAIN || e->type == TYPE_ENEMY) 
+        ENTITY *e = list->elements[i];
+        // if(ENTITY_collide(e,other))
+        // {
+        //     ENTITY *delE = LIST_UNORD_del(list,i);
+        //     i--;
+        //     ENTITY_delete(delE);
         //     continue;
-        e->pos.xPos = e->pos.velocity * e->pos.direction[0] + e->pos.xPos;        
-        e->pos.yPos = e->pos.velocity * e->pos.direction[1] + e->pos.yPos;
+        // }
+        e->ai->action(e);
+        // e->pos.prevXPos = e->pos.xPos;
+        // e->pos.prevYPos = e->pos.yPos;
+        // // if(e->type == TYPE_PLAY_MAIN || e->type == TYPE_ENEMY) 
+        // //     continue;
+        // e->pos.xPos = e->pos.velocity * e->pos.direction[0] + e->pos.xPos;        
+        // e->pos.yPos = e->pos.velocity * e->pos.direction[1] + e->pos.yPos;
     }
 }
 
+void updateEnemy()
+{
+    LIST_UNORD *list = E_LIST[LIST_PROJ];
+    for(size_t i = 0; i < list->size; i++)
+    {
+
+    }
+}
+
+void drawProj(float interpolation)
+{
+    
+}
 
 
